@@ -1270,6 +1270,33 @@ The LUT adjustment row is intentionally absent in this build.
 
 ---
 
+## 2026-11-24 - Native slider bisect result
+
+**Phase:** Phase 4 - restore opacity
+
+### Result
+
+With only the four pass-through hooks (getter, setter, decrease, increase) the
+stock sliders are fully usable again, so those hooks are safe. The crash came
+from the value-draw hook or the row/widget byte edits.
+
+### Fix attempt
+
+- The draw hook now reads the UI selection (`0x70101252`) instead of the stale
+  image-side style (`0x702250fa`). A stock page could previously receive a LUT
+  tick (0..10) and draw it against a stock row with a narrower range.
+- The row 0 and widget `0x1604` byte edits are restored, so the LUT row is
+  back.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T165058Z/GM1__V11.bin`
+- package SHA-256 `69dc99288d808b77f60f6c83cd3683a698776fb606733a0d382fece48f8354b3`
+- program SHA-256 `a23fc3b3284612182e307d1cb7a23457107df22f1a56ff5a5bb15ac11b0646a7`
+- stock restore `cad4ea27...c007`
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
