@@ -1196,6 +1196,46 @@ set arguments in the same saved page:
 
 ---
 
+## 2026-11-24 - Opacity record moved to the owned library tail
+
+**Phase:** Phase 4 - restore opacity
+
+### Findings
+
+- The step computes `10 -> 9` and passes `9` to the setter, but the read-back
+  from `0x70011524` is still `10`, and the raw store/read traces came back zero.
+- The diagnostic bytes at `0x700114ea..0x70011523` are being cleared by the
+  camera, and writing there also broke the native adjustment page: pressing
+  down on a stock profile exited to preview.
+- Conclusion: `0x700114xx..0x700115xx` is a live UI/settings buffer, not free
+  scratch. The old 0.2.4 address was never hardware-validated on this body.
+
+### New storage
+
+A read-only pool scan found the owned LUT library object:
+
+- `GML1` at `0xb3000420`, size 6144;
+- reserved tail at `0xb3001740..0xb3001bff` (all zero).
+
+The per-cell strength record now lives at `0xb3001740`:
+
+- `+0..+9`: strengths, initialised to 100;
+- `+10..+11`: tag `0x4c53`;
+- the module finds the object at runtime by scanning the first 4 KiB of the
+  pool10 alias for `GML1` with size 6144, so it follows reallocation.
+
+All diagnostics and the native parameter-array writes were removed. The native
+sliders should work again.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T163024Z/GM1__V11.bin`
+- package SHA-256 `61dfdf71dc8195e5cc5589939c8e3af85031cf213208ffbc04dca98569732821`
+- program SHA-256 `8977596325f68ecb7b0fa654f0e9666bdbe40e032a1b3b46580a1d0a86e80774`
+- stock restore `cad4ea27...c007`
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
