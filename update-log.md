@@ -1423,6 +1423,41 @@ than the library instance (native saved parameters or the bank cell header).
 
 ---
 
+## 2026-11-24 - Seed the display on page entry
+
+**Phase:** Phase 4 - restore opacity
+
+### Dump result
+
+The read-only dump after reproducing the re-entry reset proved:
+
+- record `b3001740`: cell 4 = 90, tag valid;
+- setter trace: 21 hits, last tick 9, immediate mirror read 9, immediate array
+  read 9;
+- pool: `GML1` still at `b3000420`, so the library did not move;
+- after the page was left: array 5, mirror 10.
+
+So the record and the setter are correct. Only the page rebuild resets the
+display, and re-entry does not consult the record.
+
+### Fix
+
+Added a parameter-builder hook at `0x400e20db` (`op_parameters`):
+
+- loaded LUT: call the shipped list builder (which keeps row 0 and widget
+  `0x1604` active through the three byte edits), then compute the tick from
+  the record and write `0x70101253[0]` and the mirror `0x70101258`;
+- stock styles: replay the original builder unchanged.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T175538Z/GM1__V11.bin`
+- package SHA-256 `67cc3581ff9061cc740a75151a19778392efd526a0c7ecfecb52d29fbd1ceab3`
+- program SHA-256 `22cc59f7dd43f479c6cf6ae235e53555449662579561711d47226cf476804467`
+- stock restore `cad4ea27...c007`
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
