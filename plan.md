@@ -459,7 +459,19 @@ A fixed-50% prototype is built:
 - only the adoption call displacement and the new module changed;
 - test package `work/opacity-native/fixed50-package-20261124T105256Z/GM1__V11.bin`, SHA-256 `9b947235…e426`.
 
-Next: install the test package SD-only, import `CINE.CUB` into an empty cell, and verify the stored table is a 50% blend. Then add the native slider and per-cell persistence.
+The first adoption-hook test showed that LUT import does **not** use the adoption trampoline. The actual import parser is `0x407bf000`, called from `0x407c01d4`.
+
+Updated prototype:
+
+- wrapper at `0x40830000` calls the original import parser;
+- on success, it reads the table pointer from `context+164`;
+- it runs the record check, then the corrected 50% blend;
+- it skips the blend safely if the table check fails;
+- only the import call displacement and the new module change.
+
+New package: `work/opacity-native/fixed50-package-20261124T112356Z/GM1__V11.bin`, SHA-256 `e410c520…40f4`.
+
+Next: install this package, re-import `CINE.CUB` into UI cell 10, and compare the stored payload with the expected 50% blend. Then add the native slider and per-cell persistence.
 
 ### Open design choices
 

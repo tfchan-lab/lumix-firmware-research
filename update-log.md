@@ -770,6 +770,33 @@ Also found a prototype bug: the neutral payload has a padding byte after odd Y c
 
 Next diagnostic: with the current installed build, import `CINE.CUB` into the empty UI cell 10 and dump the bank. If cell 10 differs from full Cine, the adoption hook runs; then install the corrected package for a clean test. If cell 10 is still full Cine, trace the actual import path before another update.
 
+### Cell 10 diagnostic
+
+UI cell 10 was imported from `CINE.CUB`. Bank A generation 24, mask `0x3ff`; bank cell 9 is again `CINE.CUB` with payload hash `76c11591…`, identical to full Cine.
+
+The adoption hook is therefore **not used by the import path**. The actual import parser is at `0x407bf000`, called from `0x407c01d4`; it parses/converts and then stores the table.
+
+### Import-hook prototype
+
+Moved the blend hook to the import parser call:
+
+- wrapper at `0x40830000` calls the original parser `0x407bf000`;
+- on success, it loads the table pointer from `(context+164)`;
+- it runs the original record check, then the corrected 50% blend;
+- if the table check fails, it skips the blend and preserves the original import result;
+- the import call at `0x407c01d4` is redirected to the wrapper.
+
+Only the 4-byte call displacement and the new module changed.
+
+New package:
+
+- `work/opacity-native/fixed50-package-20261124T112356Z/GM1__V11.bin`;
+- SHA-256 `e410c520e5ae06ed79e261a1ac4bee624f62e12dc1b308e9c41217b8a34440f4`;
+- program `32df3919…dfae`;
+- stock restore `cad4ea27…c007`.
+
+Next: install this package, re-import `CINE.CUB` into UI cell 10, dump the bank and compare with the expected 50% blend.
+
 ### Native slider design
 
 The native slider will use the same table-domain blend, not a per-frame filter:
