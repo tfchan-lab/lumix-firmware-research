@@ -753,6 +753,23 @@ Expected behavior:
 - this is a fixed-50% test, not the native slider;
 - no camera write yet.
 
+### First fixed-50% test result
+
+The first package was installed and the camera read back:
+
+- installed call site at `0x407f625a` = `dd a6 9d 03 00 f0 14`, pointing to the wrapper;
+- installed module at `0x40830000` is present;
+- bank B generation 23, mask `0x1ff`;
+- UI cell 7 = bank 6 `CINE.CUB` (full);
+- UI cell 8 = bank 7 `IDENT.CUB`;
+- UI cell 9 = bank 8 `CINE.CUB`.
+
+Cell 9's payload hash is `76c11591c49a623e…`, **identical to the full Cine payload**, not a 50% blend. The installed patch is present, so this is either an import made before the patch or an import path that does not use the patched adoption hook.
+
+Also found a prototype bug: the neutral payload has a padding byte after odd Y counts, and the first blend loop did not skip it. Corrected package built at `work/opacity-native/fixed50-package-20261124T111316Z/GM1__V11.bin`, SHA-256 `2a0b2e79356a5056252f8b40d42c42ee292b379b3ea1528dcea8485c0a28406a`.
+
+Next diagnostic: with the current installed build, import `CINE.CUB` into the empty UI cell 10 and dump the bank. If cell 10 differs from full Cine, the adoption hook runs; then install the corrected package for a clean test. If cell 10 is still full Cine, trace the actual import path before another update.
+
 ### Native slider design
 
 The native slider will use the same table-domain blend, not a per-frame filter:
