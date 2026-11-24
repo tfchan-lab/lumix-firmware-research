@@ -1070,6 +1070,49 @@ Each dispatcher sets bit `(event & 31)` just before the indirect handler jump.
 
 ---
 
+## 2026-11-24 - Opacity slider: direct tick stepping
+
+**Phase:** Phase 4 - restore opacity
+
+### Diagnostic result
+
+The event masks proved the editor receives the expected ids (page 3 mask ids
+3,4,5,6,10,14,15), and the setter/step counters reached 82. So the input path
+and our hooks were both running.
+
+The record still did not move for the selected cell. The native option-list walk
+(`0x4014d9b4` / `0x4014d972` over `0x708f47d8`) returned the same value each
+time, so the setter kept storing 100. The full 11-entry list is present
+(`0x708f47d8..0x708f4837`, values 0..10), so the walk itself is the problem for
+this row.
+
+### Change
+
+`op_step` no longer uses the native option-list walk. It reads the stored tick
+and applies clamped arithmetic:
+
+- decrease: tick-1, clamped at 0;
+- increase: tick+1, clamped at 10;
+- then the existing setter stores `tick * 10`.
+
+The stock profile wrap is already fixed: the shipped parameter/widget adapters
+run with only the three one-byte edits.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T143303Z/GM1__V11.bin`
+- package SHA-256 `0062731097cf1d7f6e4b8c4275f79d17e170fc0a19baf551aa0457d6615d9e06`
+- program SHA-256 `608760a46d12170847379d73eac201af20e0a770fe71dfa6a1894d6d852283ed`
+- stock restore `cad4ea27...c007`
+
+### Expected camera result
+
+- Left/right or the dial must move the readout between -5 and +5 (native
+  contrast scale; tick 10 shows +5).
+- The image path is still unchanged; only the stored per-cell strength moves.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
