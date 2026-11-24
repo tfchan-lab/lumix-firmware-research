@@ -1506,6 +1506,69 @@ place, and rows 1..4 stay hidden.
 
 ---
 
+## 2026-11-25 - Revert to the known-good LUT build; stop blind flashing
+
+**Phase:** Phase 4 - restore opacity
+
+### Revert
+
+The camera goes back to the upstream LUT package that had working stock
+profiles and stock sliders:
+
+- `work/offline-prepared/luts-20261124T075549Z/GM1__V11.bin`
+- package SHA-256 `4c34eaf367451313775ffed5688eb9c8a9f25dabb5ddeffb4dcaefba305f1fa2`
+- this keeps the ten LUT cells and the Library; it has no opacity UI.
+
+Stock restore remains `cad4ea2739407f3d59d919e87830fde4e1bad03cb3c26d87c53f7e734a45c007`.
+
+### What went wrong
+
+The stock-profile crash correlates exactly with wrapping the parameter builder.
+Even the last wrapper, which called the shipped adapter first, still ran the
+seed check (`op_lut_ptr` -> `op_core_ui`) on stock styles. That call clobbers
+`a1`, which the wrapper did not save. The caller's `a1` is live, so the stock
+page crashed. Earlier wrappers had the same class of problem with `a0`.
+
+This is an ABI mistake, not a menu-design problem: the shipped adapters depend
+on argument registers that our wrappers clobbered.
+
+### Offline plan before the next camera build
+
+1. **Keep the proven-safe baseline**
+   - four pass-through hooks: getter, setter, decrease, increase;
+   - the three in-place row/widget byte edits;
+   - no draw hook, no parameter/widget adapter replacement.
+   This combination was camera-proven: stock profiles and sliders work, the LUT
+   row appears, and a slider change stores the record (`cell 4 = 90`).
+
+2. **Seed only on the LUT entry path**
+   - hook the title entry `0x4010ab73`, which runs only when entering the
+     adjustment page from the profile list;
+   - save `d0,d1,d2,d3,a0,a1,mdr,psw`;
+   - check style/mode/mask inline with no calls;
+   - for a LUT, compute the tick and write the mirror; otherwise skip;
+   - restore every register, then jump to the original title adapter.
+   Stock pages never execute the seed.
+
+3. **ABI audit before assembly**
+   - for every hooked site, record the caller's live registers and the frame;
+   - prove the wrapper saves/restores them all, including `a1`;
+   - verify the stack is balanced on every path.
+
+4. **Offline verification**
+   - disassemble the patched program and diff only the intended bytes;
+   - simulate the tick/record math;
+   - confirm the seed path is unreachable for styles outside 7..16.
+
+5. **One instrumented camera session**
+   - add a getter/page-build counter in the owned library tail;
+   - test entry, change, leave, re-enter in a single session;
+   - dump the record, mirror and counters once.
+
+No further camera writes until steps 1-4 pass.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
