@@ -820,6 +820,34 @@ Expected 50% blend of the full Cine payload and the identity payload:
 
 Existing full-strength cells were not modified.
 
+### Visual control found a chroma bug
+
+The owner supplied `samples/Cine-Proto-50.JPG`. It shows severe green/red/magenta color corruption, not a 50% Cine look.
+
+Cause: the camera packs **Cb and Cr as two 6-bit components in one 16-bit word**. The first blend routine averaged the packed word, so a carry from Cb corrupted Cr. The bank comparison matched the Python model exactly because the model used the same packed averaging.
+
+Corrected blend:
+
+- Y bytes: average as before;
+- Cb: `(Cb_a + Cb_b + 1) / 2` on the low 6 bits;
+- Cr: `(Cr_a + Cr_b + 1) / 2` on the high 6 bits;
+- repack `Cb | (Cr << 6)`.
+
+Payload comparison:
+
+- old cell 10 payload: `2339a391…a4e4`;
+- corrected expected payload: `85b6f315745630694ce8bfd1bb120f3e493cc3929f0fd7d097c442a3f5a2c48e`;
+- 414 bytes differ, almost entirely chroma.
+
+Corrected package:
+
+- `work/opacity-native/fixed50-package-20261124T114309Z/GM1__V11.bin`;
+- SHA-256 `d8bcfe1f108a88109f5c68c0cf480a63f2707e2f7d3c7a9e04668fa88f22f0fe`;
+- program `88d1a3c6…4080`;
+- stock restore `cad4ea27…c007`.
+
+Next: install the corrected package, re-import `CINE.CUB` into UI cell 10, and compare the stored payload to `85b6f315…c48e`. Then check the rendered image and, if needed, verify Cb/Cr ordering.
+
 ### Next: native slider
 
 The fixed-50% prototype is complete. The remaining work is UI and persistence:
