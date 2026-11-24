@@ -1236,6 +1236,40 @@ sliders should work again.
 
 ---
 
+## 2026-11-24 - Native slider crash bisect
+
+**Phase:** Phase 4 - restore opacity
+
+### Result after removing diagnostics
+
+The stock-profile crash remained even with every diagnostic write removed.
+The record is now in the owned library tail, so the crash is from a UI hook,
+not from the old RAM range.
+
+### Bisect build
+
+This build removes every piece that touches the native adjustment page and
+keeps only the four pass-through hooks:
+
+- getter `0x4020f5f9`, setter `0x4020f620`, decrease `0x4010aa81`,
+  increase `0x4010aafa`;
+- no value-draw hook, no parameter/widget byte edits, no diagnostics.
+
+For stock styles these four hooks replay the original code. If the stock
+sliders still crash, one of the pass-throughs is wrong. If they work, the
+crash is in the draw hook or the adapter byte edits.
+
+The LUT adjustment row is intentionally absent in this build.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T164057Z/GM1__V11.bin`
+- package SHA-256 `985961a11334a123a6db7caf311cba8b4416f1cd29e0f1cd8e82faba1688a569`
+- program SHA-256 `0df00b2a73a585fdf39ca24a14213490b2d9a2e9da5e0a6cdc271a31d29a9009`
+- stock restore `cad4ea27...c007`
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
