@@ -630,6 +630,32 @@ The public repository does **not** include the private linker/build system that 
 
 No camera write was made during this analysis.
 
+### Interim strength variants
+
+Generated 21 pre-baked opacity variants from the film LUTs:
+
+- 25%, 50% and 75% blends for `PORTRA`, `EKTAR`, `FUJI400`, `VELVIA`, `RICOH`, `TRIX` and `CINE`;
+- names such as `PORT25.CUB`, `PORT50.CUB`, `PORT75.CUB`, `TRIX50.CUB`, etc.;
+- output: `work/test-luts/strength/`;
+- 16 GB card was not mounted when they were generated, so they are **not yet copied** to `D:`.
+
+These provide practical opacity-like control by loading different strength cells. They are not the native slider.
+
+### Cine strength variants copied to the camera card
+
+The owner asked to evaluate the Cine look at three strengths first. Copied to the 16 GB FAT32 card:
+
+| File | Strength | SHA-256 |
+|---|---|---|
+| `CINE25.CUB` | 25% | `57ff0fa12719e8efa2b2b79a3fc22fa65e5aad14aa4c6370c682e325542a8912` |
+| `CINE50.CUB` | 50% | `129f6daac0b6dd7ad800f979d4c0bd8718cf6af45518eb55d330794ee1c6c663` |
+| `CINE75.CUB` | 75% | `80851708d8e862686965d76eceb4b42bcf489b80ef3ded86b74b4824f472b61c` |
+| `CINE.CUB` | 100% | existing full-strength grade |
+
+`LUTS.TXT` on the card was updated with the strength list. The card was flushed.
+
+Test plan: import the three variants into separate cells, select each from Photo Style/Quick Menu, use the same scene/exposure/white balance, and compare. The owner will confirm the useful strength before we design the native slider.
+
 ---
 
 ## Firmware and package registry
