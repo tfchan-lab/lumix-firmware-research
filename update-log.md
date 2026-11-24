@@ -1158,6 +1158,44 @@ The getter and setter now keep `0x70101253[0]` and the display mirror
 
 ---
 
+## 2026-11-24 - Opacity slider: step/set trace build
+
+**Phase:** Phase 4 - restore opacity
+
+### Result of the array-sync build
+
+- The bar and numeric readout both show +5 (raw 10).
+- The step and set counters reached 159, so the input still reaches the hooks.
+- The record stayed at cells 0/4/9 = 90 and the parameter array stayed
+  `[5,5,5,5,0]`; the display mirror stayed 10.
+- The 90 values survived two firmware updates, so the record area is part of a
+  saved settings page rather than plain scratch RAM.
+
+### Why trace bytes
+
+The display value appears to come from the mirror (`0x70101258`) rather than the
+draw hook, and the mirror stayed 10. The next build records the actual step and
+set arguments in the same saved page:
+
+- `0x70011510` step direction;
+- `0x70011511` tick read before stepping;
+- `0x70011512` tick after stepping;
+- `0x70011513` step cell;
+- `0x70011514` setter style;
+- `0x70011515` setter parameter;
+- `0x70011516` setter value;
+- `0x70011517` setter cell;
+- `0x7001150f` tick read back after the record store.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T160237Z/GM1__V11.bin`
+- package SHA-256 `1af2f200f081f8c08791eda14eb575257d788ca2457fe7ed683dbee7c247ee6f`
+- program SHA-256 `fa3e80c84a80b770041f43a8f21ab505e518ed58d8043838b9b9218adb987027`
+- stock restore `cad4ea27...c007`
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
