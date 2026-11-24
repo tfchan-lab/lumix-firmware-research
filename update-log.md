@@ -1297,6 +1297,31 @@ from the value-draw hook or the row/widget byte edits.
 
 ---
 
+## 2026-11-24 - Bisect: row edits without the draw hook
+
+**Phase:** Phase 4 - restore opacity
+
+Re-adding both the draw hook (UI-style variant) and the row/widget byte edits
+brought the stock-slider crash back. This build keeps the byte edits and drops
+the draw hook, so the next result separates the two:
+
+- if stock sliders work, the draw hook is the crash;
+- if stock sliders still crash, the row/widget edits are the crash.
+
+The LUT adjustment row should still appear. Its readout will not move because
+the native array is not written and the draw hook is absent, but left/right
+should update the record at `0xb3001740`, which `work/dump_opacity_state.py`
+now prints.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T165930Z/GM1__V11.bin`
+- package SHA-256 `f21a0f755b92caf5cc64a6009b88e08170961b49044cbef55fe1a5a89f866219`
+- program SHA-256 `f7815122a4ffd04c7d4c3f9bf3a7972273666425c47bdc034fffef1f3d5a482c`
+- stock restore `cad4ea27...c007`
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
