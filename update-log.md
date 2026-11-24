@@ -1322,6 +1322,35 @@ now prints.
 
 ---
 
+## 2026-11-24 - Display via the native parameter array
+
+**Phase:** Phase 4 - restore opacity
+
+### Bisect conclusion
+
+- Four pass-through hooks: stock sliders work.
+- Plus row 0 / widget `0x1604` byte edits: stock sliders still work.
+- Plus the value-draw hook `0x403244b1`: stock sliders crash again.
+
+So the row edits are safe and the draw hook is the crash. The owned record at
+`b3001740` was verified: cell 0 read 90 after a decrease, with a valid tag.
+
+### New display path
+
+The draw hook is dropped. Instead the getter and setter write the tick into the
+native parameter array `0x70101253[0]` and the display mirror `0x70101258`,
+which is exactly where the native editor reads its value. The image path keeps
+using the neutral processing adapter.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T171314Z/GM1__V11.bin`
+- package SHA-256 `bc7704115f6c3f5bdf062cf0827095c572555024db518fcdcdb9fd831c1f6566`
+- program SHA-256 `5acdc2f15d84f881d348c7457c49a00a568c6fffc984cb748e30feca7079a413`
+- stock restore `cad4ea27...c007`
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
