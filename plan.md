@@ -347,6 +347,22 @@ Do not block opacity or LUT-store work on it. If it is captured later, test one 
 
 **Goal:** Re-add the native opacity slider without the 0.2.4 lag. This is the current implementation milestone.
 
+### Implementation constraint
+
+The public repo has the exact 0.2.4 opacity byte recipe and review assembly, but not the private linker/build system. The old opacity build and the current stack-fixed build overlap heavily:
+
+- 205 old-only program offsets, 61 current-only offsets, 17 changed at the same offset;
+- 37 old-only GUI-resource offsets;
+- dry-run byte merges produce 59–71 program conflicts.
+
+A blind hybrid is not safe. The practical options are:
+
+1. **Pre-baked strength variants** — 25/50/75% LUT blends loaded into different cells; no firmware change.
+2. **Controlled old-build test** — install the 0.2.4 opacity target, measure lag and confirm the slider, then decide whether a cache patch is worth the effort.
+3. **Full native patch** — reconstruct/extend the private build step or hand-assemble a cache-aware replacement; higher effort and risk.
+
+Do not merge the recipes by raw byte ranges.
+
 ### Root cause to avoid repeating
 
 The 0.2.4-era code passed the opacity tick into every preview/capture request. `job_capture` then called `lut_strength_generate` and rebuilt the table for that job. The producer runs per frame, so the table was regenerated per frame.

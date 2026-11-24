@@ -575,6 +575,63 @@ Proceed to **priority 2: restore GM1 opacity** using a cached table-domain prebl
 
 ---
 
+## 2026-11-24 — Opacity recipe analysis and merge blocker
+
+**Phase:** Phase 4 — restore opacity
+**Build/package:** none; offline analysis only
+**Camera state:** current upstream LUT build installed; policy `0`
+
+### Analysis
+
+Compared the 0.2.4 opacity recipe (`a5909a6`) with the current full-strength recipe:
+
+- program: 1,481 old edits vs 1,337 current edits; 205 old-only offsets; 61 current-only offsets; 17 same-offset changes;
+- guires: 179 old edits vs 142 current edits; 37 old-only offsets; one conflicting offset;
+- program2: identical.
+
+The old opacity code spans many regions:
+
+- native slider/UI adapters, numeric/scale rendering and assets;
+- cell-request/tick handling and `lut_strength_generate`;
+- packed job/table generation;
+- store/restore and producer/dispatcher paths;
+- GUI resources for the slider/numbers.
+
+A dry-run layering of the current recipe edits onto the old opacity target produced **71 program conflicts**; the reverse layering produced **59 program conflicts**, plus a GUI-resource conflict. The two builds are not separable by simple byte-range replacement.
+
+### Blocker
+
+The public repository does **not** include the private linker/build system that produced the installed code. A blind hybrid would be unsafe and would likely reintroduce the 0.2.4 stack/lifecycle issues or the per-frame opacity lag.
+
+### Safe options
+
+1. **Pre-baked strength variants (no firmware change).**
+   - Generate 25/50/75% blends of the film LUTs with an identity table.
+   - Load different strengths into different cells.
+   - This gives practical opacity control immediately, without touching firmware.
+2. **Controlled native-opacity experiment.**
+   - Build the old 0.2.4 opacity target as a test package.
+   - Install it with policy `0`, measure the menu/power-off lag, and confirm the native slider works on this body.
+   - Then decide whether a cached-preblend patch is worth the reverse-engineering effort.
+   - This reintroduces the known 0.2.4 risks and should be a deliberate test, not a default install.
+3. **Full native opacity patch.**
+   - Requires reconstructing or extending the private build/link step, or hand-assembling a cache-aware replacement and merging it with the current stack fixes.
+   - Not safe to attempt as a blind byte merge.
+
+### Workspace
+
+- `work/opacity-analysis/old-gm1-luts.json`
+- `work/opacity-analysis/official-components/`
+- `work/opacity-analysis/old-components/`
+- `work/opacity-analysis/new-components/`
+- `work/opacity-analysis/hybrids/`
+- `work/analyze_opacity.py`
+- `work/merge_opacity.py`
+
+No camera write was made during this analysis.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
