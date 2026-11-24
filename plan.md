@@ -471,7 +471,18 @@ Updated prototype:
 
 New package: `work/opacity-native/fixed50-package-20261124T112356Z/GM1__V11.bin`, SHA-256 `e410c520…40f4`.
 
-Next: install this package, re-import `CINE.CUB` into UI cell 10, and compare the stored payload with the expected 50% blend. Then add the native slider and per-cell persistence.
+The import-hook package was installed and `CINE.CUB` was re-imported into UI cell 10. Cell 10's payload exactly matches the expected 50% blend (0 differing bytes); existing full-strength cells were preserved.
+
+The fixed-50% prototype is complete. Remaining native-slider work:
+
+1. Map native get/set/decrease/increase/draw/backup/cancel for the Contrast row.
+2. Store per-cell strength; default existing cells to 100%.
+3. Keep the original imported table and generate one active blended table on slider/cell change.
+4. Redirect the per-frame producer to the active blended table.
+5. Regenerate once at startup restore.
+6. Generate and verify the new recipe/package, then test 0/50/100% and latency.
+
+No other camera writes are planned until the slider package is verified offline.
 
 ### Open design choices
 

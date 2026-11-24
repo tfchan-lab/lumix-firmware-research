@@ -797,6 +797,41 @@ New package:
 
 Next: install this package, re-import `CINE.CUB` into UI cell 10, dump the bank and compare with the expected 50% blend.
 
+### Import-hook result — success
+
+The import-hook package was installed and `CINE.CUB` was re-imported into UI cell 10.
+
+Bank B generation 27, mask `0x2ff`:
+
+- UI cell 7 = bank 6 `CINE.CUB`, full payload `76c11591…` preserved;
+- UI cell 8 = bank 7 `IDENT.CUB`, payload `034a50ef…` preserved;
+- UI cell 9 (bank 8) is now empty;
+- UI cell 10 = bank 9 `CINE.CUB`, sequence 27.
+
+UI cell 10 payload:
+
+`2339a3910150ede5c824d32652cc3a9009c7a087282480d72d695ad8ad1aa4e4`
+
+Expected 50% blend of the full Cine payload and the identity payload:
+
+`2339a3910150ede5c824d32652cc3a9009c7a087282480d72d695ad8ad1aa4e4`
+
+**Exact match, 0 differing bytes.** The table-domain blend, padding handling, import hook and persistence path are proven.
+
+Existing full-strength cells were not modified.
+
+### Next: native slider
+
+The fixed-50% prototype is complete. The remaining work is UI and persistence:
+
+- use the native Contrast row as the opacity control;
+- store a per-cell strength byte;
+- keep the original imported table and generate the active blended table once on slider/cell change;
+- redirect the per-frame producer to the active blended table;
+- startup restore reads strength and regenerates once;
+- map native get/set/decrease/increase/draw/backup/cancel adapters;
+- no per-frame blend.
+
 ### Native slider design
 
 The native slider will use the same table-domain blend, not a per-frame filter:
