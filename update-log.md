@@ -1569,6 +1569,57 @@ No further camera writes until steps 1-4 pass.
 
 ---
 
+## 2026-11-25 - Offline entry-seed design and ABI audit
+
+**Phase:** Phase 4 - restore opacity
+
+### Design
+
+The camera-proven-safe base is kept:
+
+- four pass-through hooks: getter `0x4020f5f9`, setter `0x4020f620`, decrease
+  `0x4010aa81`, increase `0x4010aafa`;
+- three in-place row/widget byte edits;
+- no draw hook and no parameter/widget adapter replacement.
+
+One new hook, on the LUT adjustment entry `0x4010ab73`:
+
+- saves `d0-d3`, `a0`, `a1`, `other`, `mdr`, `psw` before any call;
+- checks style 7..16, mode != 2, owner and mask bit inline, with no calls;
+- for a loaded LUT, computes the tick from the owned record and writes
+  `0x70101253[0]` and the mirror `0x70101258`;
+- restores every register and jumps to the original title adapter
+  `0x40808400`.
+
+Stock styles therefore execute the original adapter with no seed writes and
+with all registers restored. The previous crashes were ABI clobbers
+(`a0`, later `a1`) in the wrapper; this one saves the full set.
+
+The seed also records two counters in the owned library tail:
+`b3001750` seed hits, `b3001751` last seeded tick, `b3001752` getter hits,
+`b3001753` last getter tick.
+
+### Offline verification
+
+`work/opacity-native/slider/audit_slider.py` passes:
+
+- only the declared hooks, byte edits and module differ from upstream;
+- every hook resolves to its symbol;
+- the title seed save order precedes the first call, which is `op_tick`;
+- the restore order covers all saved registers and ends with the tail jump;
+- the seed writes exactly the two display bytes.
+
+### Package (built, not copied, not flashed)
+
+- `work/opacity-native/slider-package-20261124T184237Z/GM1__V11.bin`
+- package SHA-256 `225d81ccf252806fa9bc0ce89a4da3e883c0247b89da225a57a810690df7a832`
+- program SHA-256 `6b66af8379456e83d3515e78cf1efd14c7f78f4591568c1cd90b8a795d34aa88`
+- stock restore `cad4ea27...c007`
+
+No camera write until the owner asks for the next test.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
