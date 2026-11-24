@@ -714,7 +714,44 @@ The old opacity UI block is a separate adapter layer, not the current job/produc
 
 Next: dump the saved LUT bank over read-only USB, extract the camera's own neutral/identity table, then implement a fixed 50% blend at adoption in the free region.
 
-The camera was not enumerating on USB at the end of this session, so the bank dump is pending.
+### Bank dump and neutral table
+
+The camera was reconnected in service mode and both saved LUT banks were dumped read-only:
+
+- bank A `0x80880000`: `131072` bytes, SHA-256 `9d293a1a…cfac`;
+- bank B `0x808A0000`: `131072` bytes, SHA-256 `da2a3f2b…580d`;
+- capture: `work/lut-banks-20261124T104629Z/`.
+
+The bank header is `GM5L`, version 2, ten cells, generation 22, mask `0xff`. Cell 7 is named `IDENT.CUB`; its 2,188-byte payload is the camera's exact identity table:
+
+- payload SHA-256 `034a50ef2ea6369ff85142ebab7eb80c15987db11c2664b4bf5db15cfb73575b`;
+- saved to `work/opacity-native/neutral-payload.bin`.
+
+### Fixed-50% prototype
+
+Implemented a fixed 50% blend at the current cell-adoption hook (`0x407f61d0`):
+
+- new wrapper/module at `0x40830000` in the free region;
+- adoption call at `0x407f625a` redirected to the wrapper;
+- wrapper first calls the original record check at `0x4079f0ca`, then blends the 2,284-byte table in place with the neutral payload;
+- Y bytes and CbCr words are averaged with rounding; descriptor pointers are unchanged;
+- only two program ranges changed: the 4-byte call displacement at `0x7f625b` and the module at `0x830000..0x830900`.
+
+Test package:
+
+- `work/opacity-native/fixed50-package-20261124T105256Z/GM1__V11.bin`;
+- bytes `23,987,712`, SHA-256 `9b947235a130fec6fcdad7fe000c71dd46b865087ef4755e48a3c5e344fce426`;
+- program component `1ce5de27…8a7e`;
+- guires/program2 current LUT targets;
+- stock restore `cad4ea27…c007`;
+- container entries and full component decode verified offline.
+
+Expected behavior:
+
+- the blend runs only when a LUT is adopted/imported;
+- existing saved cells remain full-strength until re-imported or cleared;
+- this is a fixed-50% test, not the native slider;
+- no camera write yet.
 
 ### Native slider design
 

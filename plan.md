@@ -448,9 +448,18 @@ Additional mapping:
 - current no-opacity adapter block: `0x40808000..0x408082xx`;
 - saved LUT banks: `0x80880000`, `0x808A0000`.
 
-The fixed-opacity prototype will blend at cell adoption (`0x407f61d0`) using the camera's own neutral table. The neutral table will be extracted from the saved LUT bank with a read-only USB dump after importing `IDENT.CUB`.
+The neutral table was extracted from the saved LUT bank (`IDENT.CUB` cell 7) at `work/opacity-native/neutral-payload.bin`, SHA-256 `034a50ef…3575b`.
 
-Next: reconnect in service mode, dump the bank, extract the neutral table, then assemble a fixed 50% blend call at adoption.
+A fixed-50% prototype is built:
+
+- blend module at `0x40830000`;
+- adoption call at `0x407f625a` redirected to the wrapper;
+- original record check still runs first;
+- Y bytes and CbCr words averaged with rounding;
+- only the adoption call displacement and the new module changed;
+- test package `work/opacity-native/fixed50-package-20261124T105256Z/GM1__V11.bin`, SHA-256 `9b947235…e426`.
+
+Next: install the test package SD-only, import `CINE.CUB` into an empty cell, and verify the stored table is a 50% blend. Then add the native slider and per-cell persistence.
 
 ### Open design choices
 
