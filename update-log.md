@@ -1113,6 +1113,51 @@ run with only the three one-byte edits.
 
 ---
 
+## 2026-11-24 - Opacity slider: step works, sync the native value array
+
+**Phase:** Phase 4 - restore opacity
+
+### Diagnostic result
+
+After the arithmetic step build:
+
+- record cells 0, 4 and 9 all moved from 100 to 90;
+- set and step counters reached 108;
+- page 3 event mask still ids 3,4,5,6,10,14,15.
+
+So the buttons, dial and touch all reach the editor and the step/store path now
+works. The remaining mismatch is presentation only:
+
+- the bar follows the record through the draw hook;
+- the numeric readout still comes from the native parameter array
+  (`0x70101253`), which the LUT path keeps neutral, so it shows +0.
+
+### Change
+
+The getter and setter now keep `0x70101253[0]` and the display mirror
+`0x70101258` equal to the stored tick:
+
+- `op_get` writes the tick into both before returning;
+- `op_set` writes the tick into both after storing the record;
+- the image path is unchanged; the LUT values adapter still supplies neutral
+  processing parameters.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T154434Z/GM1__V11.bin`
+- package SHA-256 `bc9a10f1634c327f68f38cbda5b6264e6b0002621e35203a83ea252856ac2ac4`
+- program SHA-256 `1a8867dc94f5c2d53bca3e26e972a9d77014d9389636716301f5a09c259bcd5e`
+- stock restore `cad4ea27...c007`
+
+### Check on camera
+
+- The numeric readout and bar must both move with left/right or the dial.
+- The readout uses the native contrast scale, so 100% is +5 and minimum is -5.
+- Watch whether the picture contrast changes. If it does, the array feeds the
+  processing path and the display needs a different source.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
