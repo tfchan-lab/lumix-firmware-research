@@ -1016,6 +1016,60 @@ counters, parameter array and selected style.
 
 ---
 
+## 2026-11-24 - Opacity slider: input and regression diagnostic
+
+**Phase:** Phase 4 - restore opacity
+
+### Camera findings
+
+- The editor row shows value 10 (the draw adapter reads the record).
+- No control changes the value. The setter and step counters stayed at zero, so
+  the editor input never reaches `0x4020f620`, `0x4010aa81` or `0x4010aafa`.
+- Going backward from the first LUT cell or forward from the last one exits the
+  style menu to preview. The previous build did not do this.
+- RAM dump: owner `0xb3000220`, mask `0x2ff`, selected style 11, record cells
+  0..8 = 100 and cell 9 = 90. The record area therefore pre-dates this build.
+- The page dispatcher tables were decoded: table `0x4037e6f0` maps event ids
+  4/5, 15/16/17/18 and 31/32 to the value handlers, and 6/7 to row movement.
+
+### Diagnostic build
+
+Two risky pieces were removed:
+
+- the custom value-to-text map hook (`0x40324731`) and its text ids;
+- the full replacement of the parameter/widget adapters.  The shipped adapters
+  now run unchanged except for three one-byte edits that keep row 0 and widget
+  `0x1604` active (`0x4080806c`, `0x408080f2`, `0x408080ff`, value `01` -> `04`).
+
+The record hooks, the step hooks and the value draw hook remain.
+
+Three static event bitmasks were added so the next camera session identifies
+the real control mapping:
+
+- page 1 dispatcher `0x4010a637` -> mask `0x70011518`;
+- page 2 dispatcher `0x4010a80c` -> mask `0x7001151c`;
+- page 3 (value editor) dispatcher `0x4010a8e1` -> mask `0x70011520`.
+
+Each dispatcher sets bit `(event & 31)` just before the indirect handler jump.
+`work/dump_opacity_state.py` prints the three masks and the record.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T134838Z/GM1__V11.bin`
+- package SHA-256 `2b25f6d32e27e22619b2e1bdc2638680e4f9b0f5c81a6da6d30c37c569ba70fd`
+- program SHA-256 `8dc3bb346a635354afcce34c2c661ce19b4443cf3dac70d77396317804113f75`
+- stock restore `cad4ea27...c007`
+
+### Session
+
+1. Install; the update reboot clears the masks.
+2. Check whether the native profile wrap still exits to preview.
+3. Open the Contrast row; press LEFT once, RIGHT once, then one rear-dial
+   click each way; leave the menu open, then reconnect service USB.
+4. Dump the masks: page 3 shows exactly which event ids the editor received.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
