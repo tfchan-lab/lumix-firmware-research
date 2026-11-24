@@ -1458,6 +1458,33 @@ Added a parameter-builder hook at `0x400e20db` (`op_parameters`):
 
 ---
 
+## 2026-11-24 - Parameter wrapper repaired
+
+**Phase:** Phase 4 - restore opacity
+
+The page-entry seed build exposed two wrapper mistakes:
+
+- it called only the backend helper, so the shipped adapter's row hiding never
+  ran and LUT styles showed four adjustment rows;
+- it let `op_lut_ptr` clear `a0` on the stock path, which the native builder
+  needs.
+
+Fix:
+
+- after the helper, hide rows 1..4 and force row 0 to state 4;
+- save `a0` in the wrapper's local frame and restore it on the stock path;
+- keep the stock path otherwise byte-identical to the shipped adapter;
+- seed `0x70101253[0]` and the mirror from the record.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T180544Z/GM1__V11.bin`
+- package SHA-256 `f3bbbba1f15f6913f4bbd24b83b033468a41af5ae1ecc5dfd5f4151a396042ec`
+- program SHA-256 `ae088d12332132e72687e9123cd306c9c7eedf2aa6c916b746fe9af842fa51a0`
+- stock restore `cad4ea27...c007`
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
