@@ -1351,6 +1351,35 @@ using the neutral processing adapter.
 
 ---
 
+## 2026-11-24 - Opacity display mirror written from the stored tick
+
+**Phase:** Phase 4 - restore opacity
+
+### Result of the array-display build
+
+- Stock sliders stayed usable (no draw hook).
+- The owned record moved: cells 0 and 4 read 90.
+- The display stayed at `+5` and the parameter array stayed
+  `[5,5,5,5,0]`, while the mirror `0x70101258` stayed 10.
+
+So the number is driven by the mirror, the values adapter overwrites the
+parameter array, and the previous setter read the record back through a path
+that returned the pre-store tick.
+
+### Change
+
+`op_set` now keeps the incoming tick in A3 across `op_rec_set` and writes that
+tick to both `0x70101253[0]` and the mirror `0x70101258`; there is no read-back.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T172509Z/GM1__V11.bin`
+- package SHA-256 `9b934be6377d9dee00b291fb41962d37a3ec3cd3af33f355df14f7ca880d0125`
+- program SHA-256 `5bff210f9b14a6996c825fa084fc04a3896ad0304bc3bcc6b4f2392548893942`
+- stock restore `cad4ea27...c007`
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
