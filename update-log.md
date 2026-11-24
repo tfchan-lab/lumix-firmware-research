@@ -669,6 +669,40 @@ The owner supplied `Cine25.JPG`, `Cine50.JPG`, `Cine75.JPG` and `Cine100.JPG` in
 
 The blend is monotonic and the 50% midpoint is usable. The static images are clean; no colored-line artifact appears in the stills.
 
+### Toolchain milestone
+
+Built a real MN103 toolchain under MSYS2:
+
+- binutils 2.42 configured for `--target=mn10300-elf`;
+- installed at `/usr/local/mn10300` (Windows path `C:\msys64\usr\local\mn10300`);
+- working `mn10300-elf-as`, `ld`, `objcopy`, `objdump`;
+- assembler syntax validated against the GM1 review-source instruction forms;
+- fixed-address linking at `0x40830000` and binary extraction validated;
+- a tiny probe was patched into a copy of the current `program` at file offset `0x830000` and disassembled back correctly.
+
+Safe free space in the current LUT program:
+
+- `0x8263ad..0x880000` is `0xFF` in both the official and current builds and is untouched by either recipe.
+- The probe used base `0x40830000`; this is a viable module area for new code.
+
+Current LUT adapter map (file offsets / addresses):
+
+| Function | Address |
+|---|---|
+| `lut_gm1_fixed_loaded` | `0x40808000` |
+| `lut_gm1_fixed_parameters` | `0x4080803d` |
+| `lut_gm1_fixed_widgets` | `0x408080bd` |
+| `lut_gm1_fixed_values` | `0x408081bc` |
+| `native_row_state` | `0x4014dab2` |
+| `native_parameter_mode` | `0x4020f96d` |
+| `native_parameters_continue` | `0x400e20e3` |
+| `native_style_mode` | `0x4020f93e` |
+| `native_widgets_continue` | `0x400e6de4` |
+| `native_values_continue` | `0x4020f6f7` |
+| `lut_gm1_core_ui` | `0x40806116` |
+
+Next: map the old opacity adapters and native get/set/slider call targets, then implement a **fixed-opacity prototype** in the free region before adding the slider.
+
 ### Native slider design
 
 The native slider will use the same table-domain blend, not a per-frame filter:

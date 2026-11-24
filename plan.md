@@ -416,6 +416,31 @@ The current build is a byte recipe; the private linker is unavailable. To produc
    - install SD-only with policy `0`;
    - verify 0/50/100%, latency, persistence and that existing imported cells survive.
 
+### Toolchain status
+
+- MSYS2 + binutils 2.42 built for `mn10300-elf`.
+- Installed under `C:\msys64\usr\local\mn10300`.
+- `mn10300-elf-as`, `ld`, `objcopy`, `objdump` validated.
+- Fixed-address assembly at `0x40830000` and binary extraction validated.
+- Probe patched into a copy of the current `program` at file offset `0x830000` and disassembled back.
+- Safe free space: `0x8263ad..0x880000` (0xFF in official and current, untouched by recipes).
+
+Current adapter addresses:
+
+- `lut_gm1_fixed_loaded`: `0x40808000`
+- `lut_gm1_fixed_parameters`: `0x4080803d`
+- `lut_gm1_fixed_widgets`: `0x408080bd`
+- `lut_gm1_fixed_values`: `0x408081bc`
+- `native_row_state`: `0x4014dab2`
+- `native_parameter_mode`: `0x4020f96d`
+- `native_parameters_continue`: `0x400e20e3`
+- `native_style_mode`: `0x4020f93e`
+- `native_widgets_continue`: `0x400e6de4`
+- `native_values_continue`: `0x4020f6f7`
+- `lut_gm1_core_ui`: `0x40806116`
+
+Next: map old opacity adapters and native get/set/slider targets, then build a fixed-opacity prototype before the slider.
+
 ### Open design choices
 
 - **Slider granularity:** the old native row is 0–10 ticks (10% steps). Exact 25/75% requires a finer control or a 0–20/0–100 numeric table. The first implementation should use the proven 0–10 row; the pre-baked 25/75 variants remain the exact-strength reference.
