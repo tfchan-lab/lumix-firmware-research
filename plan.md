@@ -372,26 +372,55 @@ The 0.2.4-era code passed the opacity tick into every preview/capture request. `
 ```text
 slider tick or cell change
   → generate the strength-blended 2,284-byte table once
-  → cache it in the cell/job
+  → store it in one active preblend cache
 preview/capture producer
   → copy the cached table
 ```
+
+A single active cache is enough because only one LUT cell is selected at a time. This avoids allocating ten full tables and keeps the current per-frame copy cost.
 
 ### Tasks
 
 1. Reuse the old native opacity UI:
    - native Contrast row;
-   - ticks 0–10 → 0–100%;
+   - ticks 0–10 → 0–100% in 10% steps;
    - numeric and scale painting;
    - parent backup/cancel.
-2. Add a per-cell/per-tick cache keyed by cell, tick and generation.
+2. Add one active preblend cache keyed by active cell, tick and generation.
 3. Remove `lut_strength_generate` from the per-frame producer path.
 4. Persist opacity per cell:
-   - reuse the old opacity byte location if compatible;
-   - otherwise bump the bank format and use a reserved cell-header byte;
-   - v2 cells default to 100%.
-5. Generate the preblended table once at startup restore.
+   - bump the bank format and use a reserved cell-header byte;
+   - old cells default to 100%;
+   - do not overwrite the original imported table.
+5. Generate the preblended table once at startup restore and on cell/slider change.
 6. Keep the other native rows hidden for this release.
+
+### Build plan
+
+The current build is a byte recipe; the private linker is unavailable. To produce a native slider we need:
+
+1. **MN103 assembler/linker support**
+   - build GNU binutils `as`/`ld` for `mn10300-elf`, or a minimal assembler for the instruction subset used;
+   - keep the exact current-build addresses and call conventions.
+2. **Patch layout**
+   - find free space or reuse the existing LUT module holes/trampolines in the current build;
+   - add the cache/UI routines without moving current stack-fixed code.
+3. **Recipe generation**
+   - start from the current LUT target components;
+   - replace/add only the new routines and call sites;
+   - regenerate bounded `before`/`after` edits and target hashes.
+4. **Offline verification**
+   - native tests for slider get/set, backup/cancel, cache invalidation, blend math, bank persistence and startup restore;
+   - full container decode/signature/geometry checks.
+5. **Camera test**
+   - install SD-only with policy `0`;
+   - verify 0/50/100%, latency, persistence and that existing imported cells survive.
+
+### Open design choices
+
+- **Slider granularity:** the old native row is 0–10 ticks (10% steps). Exact 25/75% requires a finer control or a 0–20/0–100 numeric table. The first implementation should use the proven 0–10 row; the pre-baked 25/75 variants remain the exact-strength reference.
+- **Blend domain:** blend the camera's canonical table with the neutral table, matching `lut_strength_generate`, not the source RGB. The pre-baked samples validate the visual direction but are not the exact firmware path.
+- **Cache lifetime:** one active cache with a generation/token guard; regenerate on cell or tick change; never expose a partially blended table to the producer.
 
 ### Gate
 

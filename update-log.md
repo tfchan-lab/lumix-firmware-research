@@ -656,6 +656,33 @@ The owner asked to evaluate the Cine look at three strengths first. Copied to th
 
 Test plan: import the three variants into separate cells, select each from Photo Style/Quick Menu, use the same scene/exposure/white balance, and compare. The owner will confirm the useful strength before we design the native slider.
 
+### Cine strength samples inspected
+
+The owner supplied `Cine25.JPG`, `Cine50.JPG`, `Cine75.JPG` and `Cine100.JPG` in `samples/`.
+
+| Sample | Result |
+|---|---|
+| 25% | subtle teal/warm shift; close to neutral |
+| 50% | balanced cinematic look; useful midpoint |
+| 75% | stronger contrast and teal shadows |
+| 100% | full Cine grade |
+
+The blend is monotonic and the 50% midpoint is usable. The static images are clean; no colored-line artifact appears in the stills.
+
+### Native slider design
+
+The native slider will use the same table-domain blend, not a per-frame filter:
+
+- **one active preblend cache** (2,284-byte canonical table);
+- per-cell strength byte in the saved-bank metadata, defaulting old cells to 100%;
+- native Contrast-row slider, ticks 0–10 → 0–100% in 10% steps;
+- slider/cell change regenerates the cache once;
+- the existing per-frame producer copies the cached table; no `lut_strength_generate` in the frame path;
+- startup restore regenerates the active cache once;
+- current stack-fix/job/producer code stays in place; we do not merge the old 0.2.4 job code.
+
+The build step is the blocker: we need an MN103 assembler/linker (or a hand-assembled replacement) to place the new cache/UI routines and trampolines in the current build, then generate a new recipe and target hashes.
+
 ---
 
 ## Firmware and package registry
