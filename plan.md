@@ -439,7 +439,18 @@ Current adapter addresses:
 - `native_values_continue`: `0x4020f6f7`
 - `lut_gm1_core_ui`: `0x40806116`
 
-Next: map old opacity adapters and native get/set/slider targets, then build a fixed-opacity prototype before the slider.
+Additional mapping:
+
+- current cell adoption: `0x407f61d0`;
+- current record-check helper: `0x4079f0ca`;
+- old opacity UI trampolines: `0x4079a048` → `0x407b0112`, `0x4079a07c` → `0x407f8086`;
+- old opacity adapter block: `0x40800000..0x408002xx`;
+- current no-opacity adapter block: `0x40808000..0x408082xx`;
+- saved LUT banks: `0x80880000`, `0x808A0000`.
+
+The fixed-opacity prototype will blend at cell adoption (`0x407f61d0`) using the camera's own neutral table. The neutral table will be extracted from the saved LUT bank with a read-only USB dump after importing `IDENT.CUB`.
+
+Next: reconnect in service mode, dump the bank, extract the neutral table, then assemble a fixed 50% blend call at adoption.
 
 ### Open design choices
 

@@ -701,7 +701,20 @@ Current LUT adapter map (file offsets / addresses):
 | `native_values_continue` | `0x4020f6f7` |
 | `lut_gm1_core_ui` | `0x40806116` |
 
-Next: map the old opacity adapters and native get/set/slider call targets, then implement a **fixed-opacity prototype** in the free region before adding the slider.
+Additional mapping:
+
+- current cell adoption: `0x407f61d0` (`lut_gm1_packed_cell_adopt`);
+- current record-check helper: `0x4079f0ca`;
+- old opacity UI trampolines: `0x4079a048` → `0x407b0112`, `0x4079a07c` → `0x407f8086`;
+- old opacity adapter block (0.2.4): `0x40800000..0x408002xx`;
+- current no-opacity adapter block: `0x40808000..0x408082xx`;
+- saved LUT banks: `0x80880000` and `0x808A0000`.
+
+The old opacity UI block is a separate adapter layer, not the current job/producer code. The current cell-adoption hook at `0x407f61d0` is the best place for a one-time fixed-opacity table blend.
+
+Next: dump the saved LUT bank over read-only USB, extract the camera's own neutral/identity table, then implement a fixed 50% blend at adoption in the free region.
+
+The camera was not enumerating on USB at the end of this session, so the bank dump is pending.
 
 ### Native slider design
 
