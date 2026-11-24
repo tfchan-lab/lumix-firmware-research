@@ -848,6 +848,26 @@ Corrected package:
 
 Next: install the corrected package, re-import `CINE.CUB` into UI cell 10, and compare the stored payload to `85b6f315…c48e`. Then check the rendered image and, if needed, verify Cb/Cr ordering.
 
+### Corrected blend verified on camera
+
+The corrected package was installed and `CINE.CUB` re-imported into UI cell 10.
+
+Bank B generation 29, mask `0x2ff`:
+
+- existing cells 0–7 unchanged;
+- UI cell 10 = bank 9 `CINE.CUB`, sequence 29;
+- payload `85b6f315745630694ce8bfd1bb120f3e493cc3929f0fd7d097c442a3f5a2c48e`.
+
+That is an **exact match, 0 differing bytes**, to the corrected expected 50% blend. The owner confirms the rendered image has no chroma corruption or inversion.
+
+The fixed-50% opacity prototype is complete:
+
+- import hook works;
+- table-domain blend is correct;
+- Y and packed Cb/Cr components are handled separately;
+- bank persistence works;
+- existing cells are preserved.
+
 ### Next: native slider
 
 The fixed-50% prototype is complete. The remaining work is UI and persistence:

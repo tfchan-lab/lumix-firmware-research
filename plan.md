@@ -471,7 +471,7 @@ Updated prototype:
 
 New package: `work/opacity-native/fixed50-package-20261124T112356Z/GM1__V11.bin`, SHA-256 `e410c520…40f4`.
 
-The import-hook package was installed and `CINE.CUB` was re-imported into UI cell 10. Cell 10's payload exactly matches the expected 50% blend (0 differing bytes); existing full-strength cells were preserved.
+The import-hook package was installed and `CINE.CUB` was re-imported into UI cell 10. Cell 10's payload exactly matches the corrected expected 50% blend (0 differing bytes); existing full-strength cells were preserved. The first visual control exposed packed Cb/Cr averaging corruption; the corrected routine blends the two 6-bit chroma components separately, and the owner confirms the rendered result is clean.
 
 The fixed-50% prototype is complete. Remaining native-slider work:
 
