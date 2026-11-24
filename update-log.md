@@ -1380,6 +1380,49 @@ tick to both `0x70101253[0]` and the mirror `0x70101258`; there is no read-back.
 
 ---
 
+## 2026-11-24 - Opacity slider moves; re-entry resets the display
+
+**Phase:** Phase 4 - restore opacity
+
+### Result
+
+The trace build (`2b18e99d...`) finally moved the display: pressing decrease
+took the bar and number from `+5` to `+4`.
+
+New defect: leaving the adjustment page to the profile/LUT list and entering it
+again shows `+5` again.
+
+### Likely cause
+
+The setter store and the mirror write both work during the page. The revert is
+on page rebuild:
+
+- the native page transaction rebuilds/restores the parameter array and the
+  display mirror, which are neutral (`5` / `10`) for a LUT style;
+- the owned record is not consulted when the page is rebuilt, so the display
+  starts from the neutral value.
+
+Two possibilities remain, and the next read-only dump distinguishes them:
+
+1. the record at `b3001740` still holds `90`, and only the display seed is
+   missing;
+2. the library object is re-created on page entry, so the record is reset to
+   `100`.
+
+### Next step
+
+Reconnect the camera and dump:
+
+- `b3001740..b300175f` (record and trace);
+- a pool scan for `GML1` objects, to see whether the library moved.
+
+If the record survives, add a page-entry seed: hook the parameter builder,
+compute the tick from the record, and write `0x70101253[0]` and `0x70101258`.
+If the record is reset, move the strength to a store tied to the style rather
+than the library instance (native saved parameters or the bank cell header).
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
