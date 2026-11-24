@@ -1485,6 +1485,27 @@ Fix:
 
 ---
 
+## 2026-11-24 - Seed after calling the shipped parameter adapter
+
+**Phase:** Phase 4 - restore opacity
+
+The previous wrapper still crashed stock profiles, so its own stock path was
+abandoned. The new wrapper calls the shipped adapter `0x4080803d` with the
+original 16-byte frame, saves its return registers, and only then seeds the
+display from the record. Stock behavior is therefore exactly the shipped code.
+
+Row 0 remains active because the shipped adapter's own row-0 value edit is in
+place, and rows 1..4 stay hidden.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T181639Z/GM1__V11.bin`
+- package SHA-256 `4783449d9684e02736bbce63975d1c6e565509bf1cb49224fab4e5c6c39e624b`
+- program SHA-256 `9a19b3d3ea53d640e9b20351f1e92181da770561754efaf8872ba27523330b27`
+- stock restore `cad4ea27...c007`
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
