@@ -3,6 +3,19 @@ __pycache__/
 firmware/
 captures/
 work/
+samples/
+# Personal camera media and local test captures
+*.JPG
+*.jpg
+*.jpeg
+*.RW2
+*.rw2
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.pcap
+*.pcapng
 .DS_Store
 PRIVATE.zip
 *.bin
