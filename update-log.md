@@ -896,6 +896,69 @@ The build step is the blocker: we need an MN103 assembler/linker (or a hand-asse
 
 ---
 
+## 2026-11-24 - Native opacity slider, stage A
+
+**Phase:** Phase 4 - restore opacity
+
+### What was mapped
+
+The 0.2.4 opacity build was decoded to recover its native-row adapter:
+
+- selection predicate: style `0x70101252` in 7..16, mode `0x700fcec8 != 2`, and
+  the per-style mask bit at LUT-core `+304`;
+- per-cell strength record: 10 bytes at `0x70011524`, tag `0x4c53` at `+10`;
+  invalid records initialise to 100%;
+- row getter hook `0x4020f5f9`, row setter hook `0x4020f620`, step hooks
+  `0x4010aa81` / `0x4010aafa`, backup `0x40109f2a`, cancel `0x40109fbe` /
+  `0x40109f6b`;
+- row value list at `0x708f47a8`; numeric option list for row 0 at `0x708f47d8`;
+- row states: 1 hidden, 2 visible/non-adjustable, 4 visible/selectable.
+
+### Change
+
+A new module was assembled at `0x40840000` (1306 bytes) and the stock hooks
+above were redirected to it. The current fixed-style parameter/widget adapters
+are bypassed for loaded LUT styles:
+
+- parameter rows 1..4 stay hidden; row 0 is forced to state 4 (selectable);
+- widget `0x1604` is forced to state 4;
+- the getter returns `round(strength / 10)` for row 0;
+- the setter stores `tick * 10` for row 0 and leaves the native image
+  parameter bytes neutral;
+- step, backup and cancel operate on the record.
+
+Only the nine hook sites and the new module changed; the rest of the program is
+byte-identical to the current upstream LUT build.
+
+### Scope limit
+
+This stage is **UI only**. The per-frame table copy still uses the imported
+cell table, so moving the slider changes the stored strength but not the image
+yet. This isolates the menu/record risk from the image path.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T125529Z/GM1__V11.bin`
+- package SHA-256 `492031dfefbd9506dce641afc98d92863d2a4f5d19f98dde3d849237a8e752a9`
+- program SHA-256 `a5a2092bd547ad8936d8ce76a8d9270200745c27ec5f8ab936a486adab42a4d2`
+- stock restore `cad4ea27...c007`
+
+### Camera test plan
+
+1. Select a loaded LUT cell.
+2. Open the style adjustment page and look for a row (expected: the native
+   Contrast row) with value 10.
+3. Move it 10 -> 5 -> 0 and back; the displayed value must change.
+4. The image must stay identical because the image path is unchanged.
+5. Leave and re-enter the page; the value must persist in RAM.
+6. Switch to another loaded LUT cell; each cell must keep its own value.
+7. Power cycle and re-check to see whether `0x70011524` survives.
+
+If the row does not appear or is not selectable, the next step is to inspect the
+row/widget state convention rather than the blend.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.

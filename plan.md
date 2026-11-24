@@ -473,16 +473,40 @@ New package: `work/opacity-native/fixed50-package-20261124T112356Z/GM1__V11.bin`
 
 The import-hook package was installed and `CINE.CUB` was re-imported into UI cell 10. Cell 10's payload exactly matches the corrected expected 50% blend (0 differing bytes); existing full-strength cells were preserved. The first visual control exposed packed Cb/Cr averaging corruption; the corrected routine blends the two 6-bit chroma components separately, and the owner confirms the rendered result is clean.
 
-The fixed-50% prototype is complete. Remaining native-slider work:
+The fixed-50% prototype is complete. The native slider work is split into two
+stages so menu risk is separated from image-path risk.
 
-1. Map native get/set/decrease/increase/draw/backup/cancel for the Contrast row.
-2. Store per-cell strength; default existing cells to 100%.
-3. Keep the original imported table and generate one active blended table on slider/cell change.
-4. Redirect the per-frame producer to the active blended table.
-5. Regenerate once at startup restore.
-6. Generate and verify the new recipe/package, then test 0/50/100% and latency.
+**Stage A (built, camera test pending): native row and record**
 
-No other camera writes are planned until the slider package is verified offline.
+- new module at `0x40840000` (1306 bytes);
+- loaded LUT styles show only native row 0, forced to state 4 (selectable);
+- widget `0x1604` is forced to state 4;
+- per-cell strength record: 10 bytes at `0x70011524`, tag `0x4c53` at `+10`,
+  invalid records initialise to 100%;
+- transaction backup byte at `0x70011530`;
+- getter `0x4020f5f9`, setter `0x4020f620`, steps `0x4010aa81` /
+  `0x4010aafa`, backup `0x40109f2a`, cancel `0x40109fbe` / `0x40109f6b`;
+- numeric option list for row 0: `0x708f47d8`;
+- rows 1..4 and the other six widgets stay hidden;
+- the image path is unchanged, so the slider moves but the picture does not
+  change yet.
+
+Package `work/opacity-native/slider-package-20261124T125529Z/GM1__V11.bin`,
+SHA-256 `492031df…52a9`.
+
+**Stage B (next): cached image path**
+
+1. Keep the imported table unchanged in the cell.
+2. Generate one active blended table when the tick, cell or generation changes.
+3. Point the per-frame table copy at the active table; no per-frame blend.
+4. Regenerate once during startup restore.
+5. Add power-cycle persistence for the 10 strength bytes.
+
+Stage B needs the cell lease / workspace placement decision: the library's
+10 cell leases occupy 23,480 of the 130,560 usable bytes in the pool10 child,
+so an 11th lease or the library object's reserved tail are the candidates.
+
+No other camera writes are planned until stage A behaves correctly.
 
 ### Open design choices
 
