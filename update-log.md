@@ -959,6 +959,63 @@ row/widget state convention rather than the blend.
 
 ---
 
+## 2026-11-24 - Native opacity slider, stage A2 (editor draw path)
+
+**Phase:** Phase 4 - restore opacity
+
+### Camera result of stage A
+
+The row appeared with the label **Contrast** and could be entered, but the
+editor showed the native -5 / 0 / +5 contrast scale and the value did not move.
+
+### Cause
+
+The stage A setter stored only the opacity record. The native row editor draws
+its value from the image-parameter array (`0x70101253`), which the LUT values
+adapter keeps neutral, so the cursor never moved.
+
+The 0.2.4 build did not write that array either. It substituted the displayed
+value in two native drawing sites:
+
+- `0x403244b1` (value used by the row editor) -> tick from the record;
+- `0x40324731` (value-to-text map) -> a private map `0..10 -> 0x1b58..0x1b62`
+  so the readout is 0..10 instead of -5..+5.
+
+### Change
+
+Added two read-only draw adapters to the module:
+
+- `op_draw_value` (module `0x4084010a`): restores D1/A0/MDR/PSW, returns the
+  tick for a loaded LUT row 0, otherwise the stock array byte, then continues
+  at `0x403244b9`;
+- `op_draw_label` (module `0x4084015c`): same selection, substitutes the
+  private value map, then continues at `0x4032473f`; the stock path keeps the
+  original `movbu (d1,a0),d0` at `0x40324737` and the native map.
+
+The image-parameter array stays neutral, so the image path is still unchanged.
+
+Two diagnostic counters were added: `0x70011532` counts setter hits and
+`0x70011533` counts step hits. `work/dump_opacity_state.py` reads the record,
+counters, parameter array and selected style.
+
+### Package
+
+- `work/opacity-native/slider-package-20261124T131924Z/GM1__V11.bin`
+- package SHA-256 `287af20e20a2a19682f9ce3bd69372504d407dea28c81b371d3fe466bc20dfe5`
+- program SHA-256 `cd35fc59a646a8b9a9b0965f47855d9c77c9d9e1eabc4b14424dd288ed4cea4b`
+- stock restore `cad4ea27...c007`
+
+### Camera test
+
+1. Enter the Contrast row and use **left/right** (or the rear dial), not
+   up/down, to change the value.
+2. Report the number shown at entry and after each step.
+3. Exit, re-enter and check the value.
+4. Reconnect service USB; the state dump will show whether the record, the
+   counters and the array moved.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
