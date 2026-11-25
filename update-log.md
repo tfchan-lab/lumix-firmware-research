@@ -2478,6 +2478,60 @@ No build, copy, or flash was made.
 
 ---
 
+## 2026-11-25 - LUT-page control draw dump
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** B6 `ab0b0776...30fa1` (read-only dump)
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; LUT adjustment
+page open
+
+### Control values
+
+| Item | Value |
+|---|---|
+| mode `0x700fcec8` | `0` |
+| style `0x70101252` | `7` |
+| parameter array | `[5,5,5,5,0]` |
+| display mirror | `10` |
+| current row | `0` |
+| draw raw `0x702267d8` | `0` |
+| page style `0x702250fa` | `7` |
+| row values `0x702250fb` | `[5,5,5,5,0,10,7,2,0,14,8,...]` |
+
+The control page satisfies the value hook's LUT precondition: `draw raw 0`,
+page style 7 (loaded LUT), mode 0. This is the path that substitutes the
+tick and moves the bar.
+
+### Row descriptors
+
+Owner `0x708f47a4 = 0xb3000220`; row list at owner + 160 = `0xb30002c0`.
+The live descriptors are:
+
+```
+[00] id=0 state=4 flags=0x01 label=0
+[01] id=1 state=1 flags=0x01 label=0
+...
+[05] terminator
+```
+
+The `u32 label` field is **zero** for every row. The row descriptor is a
+state table only; the `Contrast` label is not stored there. The row-label
+rename therefore needs the static parameter-name table/draw path, not a
+row-descriptor edit.
+
+The English parameter-name pointer table remains at guires `0x112a80`
+(`0x112abc -> 0x40b575f8 -> "Contrast"`), but the code that indexes it has
+not yet been located.
+
+### Next
+
+Reproduce the stock slider crash, reconnect, and run the same read-only
+dump. The decisive values are `draw raw`, page style, mode, and style on
+the failing stock page. If the page has already returned to preview, the
+flag/path trace build is required.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
