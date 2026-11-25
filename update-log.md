@@ -114,9 +114,10 @@ Use this when the camera misbehaves. Attach the HDMI capture or a photo/video wh
 | Official GM1 1.1 | Installed and confirmed |
 | Stable research patch | Installed; language/update-access package active |
 | Camera writes | Official 1.1 update, temporary policy write, stable research update, LUT update |
-| Firmware builds | Stable and current upstream LUT builds verified and installed |
+| Firmware builds | Upstream LUT build and native opacity UI build `8b954b` verified on camera |
+| Native opacity UI | Verified: `-5..+5` both directions, set persists, re-entry preserved, stock safe; image path unchanged |
 | Defect reproduction | Colored lines characterized as a one-time cosmetic profile-menu artifact; low urgency |
-| Next milestone | Restore opacity without the 0.2.4 lag |
+| Next milestone | Apply per-cell opacity in the cached table-domain path |
 | LUT store | Design only |
 
 ---
@@ -1738,6 +1739,60 @@ not part of the remaining defect.
 - both directions work across `0..10`;
 - leaving and re-entering the adjustment page preserves the stored tick;
 - the image is still unchanged until the cached preblend path lands.
+
+---
+
+## 2026-11-25 - Native opacity UI verified on camera
+
+**Phase:** Phase 4 - restore opacity
+**Build/package:** `slider-package-20261125T053717Z`, package SHA-256
+`8b954bbb1552bcb0376b6b2e0b1810434ba2e58a004887b7811e2734db592e29`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`, ROM/RAM policy `0`
+**Result:** pass
+
+### Observed
+
+- stock profiles and stock sliders: normal, no crash;
+- LUT adjustment row: `-5..+5` in both directions with buttons, dial and
+  touch;
+- setting the value persists; leaving and re-entering the adjustment page
+  does not revert to `+5`;
+- image path is still unchanged, as intended for this stage.
+
+### Dump
+
+| Item | Value |
+|---|---|
+| library record `b3001740` | `[50, 100, 100, 100, 100, 100, 100, 100, 100, 100]` |
+| library tag | `0x4c53` |
+| seed hits / tick `b3001750/51` | `4 / 5` |
+| getter hits / tick `b3001752/53` | `5 / 5` |
+| setter hits / tick `b3001754/55` | `37 / 5` |
+| step hits / dir / before / after / cell | `37 / 0 / 6 / 5 / 0` |
+| record-get cell / init / raw byte | `0 / 0 / 60` |
+| getter ring (newest) | `(style 7, cell 0, tick 5)` |
+| parameter array / mirror | `[5, 5, 5, 5, 0] / 5` |
+| current row / selected style | `0 / 7` |
+
+### Interpretation
+
+- The record-get raw byte is `60` because the final decrease read the record
+  at tick 6 before the setter stored tick 5. The record now reads `50`.
+- `init=0` means the record was already valid and was read, not defaulted to
+  100.
+- The step count equals the setter count (`37`), so every step reached the
+  setter.
+- The seed tick and getter tick are both `5`, matching the stored `50`, so
+  page entry and re-entry use the record value.
+- The inverted-bound fix is confirmed on camera.
+
+### Next
+
+- keep `8b954b` as the native UI baseline;
+- apply the per-cell strength in the cached table-domain blend, with no
+  per-frame regeneration;
+- verify visually and by comparing the blended bank against the expected
+  table.
 
 ---
 
