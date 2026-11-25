@@ -2,12 +2,13 @@
 
 **A practical fork of the upstream Lumix firmware research archive, focused on the DMC-GM1 LUT patch and the tooling around it.**
 
-> **Status: planning and offline preparation.** No camera writes or firmware changes have been made yet. The Panasonic proprietary USB cable is still pending; the mini-HDMI cable and USB capture card are ready.
+> **Status: B9 LUT opacity release.** The GM1 has been flashed with B9; stock profile switching/sliders and LUT blend/bar/number are working. See [GM1 LUT Opacity B9 release](docs/gm1-lut-opacity-b9.md).
 
 This fork starts from the upstream archive at commit `e22ac72` (the `updater-v0.2.8` documentation state). The upstream project is an unmaintained reference archive. This fork is our own working copy for experiments, fixes and new tooling. It does not upstream pull requests.
 
 - [Plan and roadmap](plan.md)
 - [Update log](update-log.md)
+- [GM1 LUT Opacity B9 release](docs/gm1-lut-opacity-b9.md)
 - [Upstream archive policy](CONTRIBUTING.md)
 
 ---
@@ -17,8 +18,8 @@ This fork starts from the upstream archive at commit `e22ac72` (the `updater-v0.
 The upstream archive documents a large amount of successful research, but it is organized as a chronological evidence archive. This fork adds a clear working entry point for one camera and one goal:
 
 1. **Characterize the transient colored vertical lines** that appear after the first LUT import. They are currently considered a low-urgency cosmetic artifact, not a functional defect.
-2. **Restore opacity** on GM1, using a cached table-domain blend so the old severe UI lag does not return. This is the next implementation milestone.
-3. **Add native sliders later**, only after the GM1 image-processing order is traced.
+2. **Restore opacity** on GM1, using a cached table-domain blend so the old severe UI lag does not return. **Released as B9.**
+3. **Add native sliders** for LUT tabs, with a working blend, bar and numeric readout. **Released as B9;** the row label still reads `Contrast`.
 4. **Build a LUT store**, with a Node.js web server and a local bridge that can push LUTs to the camera over Wi-Fi when the firmware supports it.
 
 The detailed work breakdown, gates and risks are in [plan.md](plan.md). Daily notes and test results go in [update-log.md](update-log.md).
@@ -30,12 +31,12 @@ The detailed work breakdown, gates and risks are in [plan.md](plan.md). Daily no
 | Priority | Work | Status | Exit gate |
 |---|---|---|---|
 | **1** | GM1 colored vertical lines after first LUT import | Characterized: one-time cosmetic profile-menu artifact; low urgency | Optional: capture LCD/video evidence; no functional blocker |
-| **2** | Restore GM1 opacity without the 0.2.4 lag | **Next implementation milestone** | 0/50/100% correct, persists per cell, no menu/power-off lag, no colored lines |
-| **3** | Native sliders for LUT tabs | Deferred until the GM1 ISP order is traced | Sliders affect the intended output and do not corrupt LUT metadata |
+| **2** | Restore GM1 opacity without the 0.2.4 lag | **Released as B9** | Stock switching/sliders + LUT blend/bar/number verified; power-cycle persistence still unproven |
+| **3** | Native sliders for LUT tabs | **Released as B9** (label limitation) | Sliders affect the intended output; LUT row label still reads `Contrast` |
 | **4** | Node.js LUT store | Offline design ready | Store catalog + validated downloads; later local bridge and firmware endpoint |
 | **5** | GM1 Wi-Fi LUT upload | Research pending | `cam.cgi` owner identified; safe chunked upload; bank commit/restore |
 
-The current GM1 LUT patch applies LUTs at **100%** and hides the native adjustment rows. That is the baseline we are improving.
+The B9 release restores native LUT opacity on the adjustment page. The prior baseline applied LUTs at **100%** and hid the native adjustment rows.
 
 ---
 

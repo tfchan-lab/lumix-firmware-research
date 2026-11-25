@@ -3150,6 +3150,30 @@ custom overlay, both higher risk than the current B9 build.
 
 ---
 
+## 2026-11-25 - B9 declared release
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** B9 `85792aba...4bfd3`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; B9 restored
+
+B9 is the functional release build. The LUT row label remains `Contrast`;
+label removal was abandoned after B10/B11/B12.
+
+Release note: `docs/gm1-lut-opacity-b9.md`
+Tag: `gm1-lut-opacity-b9`
+
+Release identity:
+
+- package `85792aba1fbd283427dd89d1ba8b13d7f968f1de279f840bdbfc0f203f24bfd3`;
+- program `2c0beae279d9b4d07f40cba4869d11d79554db85c9ad4b1404df16816e1b462b`;
+- stock restore `cad4ea2739407f3d59d919e87830fde4e1bad03cb3c26d87c53f7e734a45c007`.
+
+Verified on the camera: stock switching/sliders, LUT blend, bar and number.
+Known limitations: `Contrast` label, unproven power-cycle persistence, and
+the native `-5..+5` numeric display for the 0..100 stored strength.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
