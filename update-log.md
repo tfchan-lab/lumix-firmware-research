@@ -1844,6 +1844,96 @@ active-table pointer is inside `GTL1`/`GML1`, so one read-only dump of
 
 ---
 
+## 2026-11-25 - Stage B: opacity applied to the active table
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** `slider-package-20261125T062028Z`, package SHA-256
+`0d1a98ccb13248bcc36b6b148fc77102be30e8c5cab82c8e9b7d3e4a0498dd4c`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`, ROM/RAM policy `0`;
+SD card not mounted at package time
+
+### What the old 0.2.4 build did
+
+The old build's cell-adoption function at `0x407f41f3` is the image-table
+path:
+
+- `0x407f4070` returns the active table (2,284 bytes) and its flat data
+  buffer (2,188 bytes);
+- `0x40792000` returns the source cell table;
+- the current function copies the source table to the active table and
+  rebases the eight bank descriptors (`0x407f42be..f2`);
+- the old build then blended the active data with the embedded neutral
+  table at `0x407a2000` and copied the result to the flat data buffer;
+- the blend ran while the job state was 3 (busy), then the function
+  published state 2 (ready).
+
+The old blend routine takes `(destination, source, percent)` and blends
+Y bytes plus the two packed 6-bit Cb/Cr components. At 50% its math is
+`(a+b+1)/2`, exactly the proven fixed-50% result.
+
+### This build
+
+- module grew from 1,210 to 4,072 bytes at `0x40840000`;
+- embedded camera-neutral payload (2,188 bytes, SHA-256
+  `034a50ef...3575b`);
+- new adoption hook `0x407f42f4 -> 0x4084060c`: runs after the copy and
+  descriptor rebase, saves/restores all registers, reads the cell's record
+  percentage, blends the active table from the original source, copies the
+  result to the flat data buffer, then replays the two overwritten
+  instructions and jumps to `0x407f42f9`;
+- new `op_reblend_cached`: called at the end of `op_set` for the same cell,
+  re-blends the cached active/source pointers at the new percentage and
+  copies to the flat buffer;
+- the frame path is unchanged; there is no per-frame blend.
+
+Stage B cache/trace in the library tail:
+
+| Address | Meaning |
+|---|---|
+| `b3001780` | active table pointer |
+| `b3001784` | flat data pointer |
+| `b3001788` | source table pointer |
+| `b300178c` | cached cell |
+| `b300178d` | last percentage |
+| `b300178e` | adoption blends |
+| `b300178f` | setter reblends |
+
+### Offline gates
+
+- patch, placement and hook encoding pass;
+- adoption hook save/restore/replay pass;
+- variable blend contains both divisions and the chroma repack;
+- embedded neutral payload matches the known hash;
+- cache addresses and the `op_set` reblend call are checked.
+
+Package:
+
+- `work/opacity-native/slider-package-20261125T062028Z/GM1__V11.bin`
+- package `0d1a98cc...8dd4c`;
+- program `80243c32...5c1dc`;
+- stock restore `cad4ea27...c007`.
+
+### Camera test
+
+1. Install and reboot.
+2. Stock profile and stock sliders: normal, no crash.
+3. LUT cell: set opacity to 100 (full), 50, then 0 (neutral). The image
+   must change at each step; 0 must remove the LUT look.
+4. Move back and forth, leave and re-enter the page.
+5. Reconnect USB for the dump.
+
+Interpretation:
+
+- `adoption blends > 0` and `setter reblends > 0`: both paths ran;
+- if the image does not change while the counters move, the producer is
+  reading a different copy than the active/flat buffers;
+- if the counters stay zero, the adoption path or the setter call is not
+  reached.
+
+No card write or flash yet.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
