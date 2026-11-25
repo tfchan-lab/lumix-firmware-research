@@ -1620,6 +1620,53 @@ No camera write until the owner asks for the next test.
 
 ---
 
+## 2026-11-25 - Getter ring build and candidate matrix
+
+**Phase:** Phase 4 - restore opacity
+
+### Candidate matrix (key deltas)
+
+| Build | Record | Setter mirror | Draw | Seed | Stock | LUT |
+|---|---|---|---|---|---|---|
+| upstream | - | - | - | - | ok | n/a |
+| F21A | library tail | yes | no | none | ok | static `+0` |
+| 2b18 | library tail | yes (tick) | no | none | ok | `+5 -> +4`, reverts on re-entry |
+| 69dc | library tail | yes | `0x403244b1` | none | crash | `+5/+0` |
+| 4783 | library tail | yes | no | parameter wrapper | crash | `+5 -> +4`, reverts |
+| this | library tail | yes (tick) | no | title entry | expected ok | seed + move |
+
+Derived rules:
+
+- stock crashes only appear with the draw hook or a builder wrapper, both of
+  which clobbered caller registers;
+- the move works only when the setter writes the mirror from the stored tick;
+- the re-entry reset is a mirror write by one of the five page-event getter
+  stores, returning a stale tick;
+- the record and the input path are no longer unknowns.
+
+The only remaining unknown is which style/cell the getter resolves on the page
+entry/exit calls.
+
+### Diagnostic
+
+`op_get` now keeps the last four getter calls in the owned library tail, newest
+first at `b3001760`: three bytes per entry `(style, cell, tick)`.
+
+Together with the seed trace (`b3001750..53`), one session shows:
+
+- whether the title seed ran and with what tick;
+- which style/cell the page-entry getter used;
+- whether the mirror ended at the getter's tick or was overwritten.
+
+### Package
+
+- `work/opacity-native/slider-package-20261125T051855Z/GM1__V11.bin`
+- package SHA-256 `c4f19cfefdf5288b3aaea348cf09111fae8b68010187ae84dccce9d5345525a9`
+- program SHA-256 `16b130b37e9853971e7347abb6b3b1277b0260a1d949392a24a186ae3ad27da5`
+- stock restore `cad4ea27...c007`
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
