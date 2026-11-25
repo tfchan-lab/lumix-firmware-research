@@ -2987,6 +2987,60 @@ label path/timing is different.
 
 ---
 
+## 2026-11-25 - Matrix update: B9/B10/B11 label attempts
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** B9 `85792aba...4bfd3`, B10 `d5f05e81...f920f`,
+B11 `d1c9db78...edbe7`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; B11 label still
+`Contrast`
+
+### Functional matrix
+
+| Build | Value/text gate | Stock switch | Stock sliders | LUT bar | LUT number | Label | Decoupled |
+|---|---|---|---|---|---|---|---|
+| UI `8b954b` | none | ok | ok | yes | yes | Contrast | n/a |
+| Stage B `0d1a98cc` | none | ok | ok | yes | yes | Contrast | no |
+| B2 `2d247386` | none | ok | crash | yes | no | Contrast | yes |
+| B4 `4d24b64c` | none | ok | crash | yes | yes | Contrast | yes |
+| B5 `b098ebd7` | no hook | ok | ok | no | no | Contrast | yes |
+| B6 `ab0b0776` | none | ok | crash | yes | no | Contrast | yes |
+| B7 `05305767` | owner row-state | ok | ok | no | no | Contrast | yes |
+| B8 `16f12181` | absolute LIT1 row 1 | ok | ok | yes | no | Contrast | yes |
+| B9 `85792aba` | absolute LIT1 row 1 | ok | ok | yes | yes | Contrast | yes |
+
+B9 is the functional candidate: stock, LUT bar, number and blend all work;
+the only remaining item is the row label.
+
+### Label-removal attempts
+
+| Build | Action | Text IDs | Result |
+|---|---|---|---|
+| B9 | none | - | `Contrast` |
+| B10 `d5f05e81` | blank at label lookup calls `0x402c8c05`/`0x402c8c25` | `0x1040` | `Contrast` unchanged |
+| B11 `d1c9db78` | same hooks, blank both candidates + lookup ring | `0x1040`, `0x0c67` | `Contrast` unchanged |
+
+The B10/B11 hooks did not remove the label. Possible causes:
+
+1. the row label is not drawn through those two lookup calls;
+2. the lookup runs before the absolute row-1 state is 1, so the gate
+   returns the original text ID;
+3. text ID `0` is not blank in the label context.
+
+B11 records the evidence at:
+
+- `b300179a` label lookup hit count;
+- `b30017a0 + n*4`: 16-bit text ID, row-1 state, page style.
+
+The next dump distinguishes these cases: an empty ring means the label
+path is elsewhere; `row1 != 1` means a timing/page-flag fix is needed; the
+text IDs present tell us which lookup is the visible label.
+
+B9 remains the functional build. The label removal is isolated and does
+not affect stock, bar, number or blend.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
