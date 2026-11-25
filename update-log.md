@@ -1796,6 +1796,54 @@ not part of the remaining defect.
 
 ---
 
+## 2026-11-25 - Stage B mapping: bank, pool leases and live core
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** none (read-only analysis)
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; service USB dropped
+before the live-core read
+
+### Bank format
+
+- header `GM5LUT2`, version 2, ten cells, generation and mask;
+- cell record stride `0x8b0`, payload `0x88c` (2,188 bytes), cell 0 payload
+  at `+0x60`;
+- bank A generation 22, mask `0xff`, seven named cells;
+- the bank payloads are the original full-strength cell tables.
+
+### Pool10
+
+- `GML1` at `0xb3000420` (6,144 bytes) is library metadata (names, mask and the
+  owned strength record at `0xb3001740`), not the table data;
+- cell lease descriptors start at `0xb3002900`: `LIL1`, size `0x92c`
+  (2,348 bytes), lease pointers `0xb3011800 + n*0xa00`;
+- each bank payload appears in the lease area at `0xb3011860 + n*0xa04`,
+  after a `0x60 + n*4` header. The leases are runtime copies of the saved
+  cells.
+
+### Live core
+
+The validator at `0x40806009` checks a fixed 8 KiB object at `0x708f52f0`:
+
+- core header, size 8,192;
+- `GTL1` at `+0x20` (size 336, data area 288);
+- `GML1` at `+0x180` (size 128);
+- `GML1` at `+0x220` (size 6,144).
+
+This is the live runtime library; the pool `GML1` is its backing copy. The
+active-table pointer is inside `GTL1`/`GML1`, so one read-only dump of
+`0x708f5000..0x708f7400` is needed to identify it.
+
+### Next
+
+1. Wake the camera and dump the live core.
+2. Parse `GTL1` and map style `7..16` to cell and active table pointer.
+3. Copy the original bank cell to the active table and blend with the stored
+   strength, once per set/cell change/startup.
+4. Build and audit offline; no card or flash yet.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
