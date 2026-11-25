@@ -2264,6 +2264,39 @@ identified. The parser is ready in `work/analyze_row_labels.py`.
 
 ---
 
+## 2026-11-25 - Revert to B2 after stock-slider crash
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** `slider-package-20261125T063816Z`, package SHA-256
+`2d24738680b46d58a2ac7c8284084e2e16c245e2bd30634e21181b6137416dff`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; card mounted
+
+B6 (bar-only value hook using `0x702250fa`) made stock profiles selectable
+but crashed the stock slider to preview with `Sleep cancel`. B5 had stock
+working but no bar. The last candidate matching both stock and LUT
+bar/blend is B2, the Ricoh-sample build:
+
+- value draw hook at `0x403244b1` using `STYLE` (`0x70101252`);
+- no text-map hook, no draw-label hook;
+- native parameter array neutral;
+- adoption and setter table blend;
+- number stays native; bar and blend work.
+
+Reverted the card to B2 and verified the hash. B6 is backed up on the PC.
+
+The stock regressions are isolated to the later drawing changes:
+
+- B3 added the text-map hook -> stock switching broke;
+- B6 changed the value hook to `0x702250fa` -> stock slider crashed.
+
+The B2 value hook uses `STYLE`, which is the version that matches the
+requested working combination.
+
+Label rename remains pending; it needs a LUT-page row-label dump and a
+LUT-only custom text entry.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
