@@ -2790,6 +2790,64 @@ No change to the working B8 gate or blend.
 
 ---
 
+## 2026-11-25 - B9: gated number + bar on the working B8 base
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** `slider-package-20261125T103211Z`, package SHA-256
+`85792aba1fbd283427dd89d1ba8b13d7f968f1de279f840bdbfc0f203f24bfd3`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; card mounted
+
+B9 keeps the B8 absolute LIT1 row-state gate on the value hook and adds
+the text-map hook at `0x40324731` with the same gate:
+
+- `0xb30002ca == 1` (LUT page): number uses the record tick and the stock
+  native text table `0x404604b2`, so it shows `-5..+5`;
+- any other state: original `0x702250fb` map path, no LUT call.
+
+This is the same data-backed discriminator that made B8 stock-safe. The
+text hook's stock path is the original map; the LUT path only runs on the
+LUT page.
+
+Trace additions:
+
+- `b3001792` label path (0 stock / 1 LUT);
+- `b3001793` label row 1 state.
+
+### Package
+
+- `work/opacity-native/slider-package-20261125T103211Z/GM1__V11.bin`
+- package `85792aba...4bfd3`;
+- program `2c0beae2...b462b`;
+- B8 `16f12181...03d55` backed up on the PC.
+
+### Test
+
+1. Stock switching and stock sliders: must remain working.
+2. LUT page: bar and number both move `-5..+5`; blend remains.
+3. If stock breaks, revert to B8; the text-hook gate is the only new risk.
+
+### Label mapping
+
+The parameter-mode object dump at `0x700fd4d4` was attempted, but the
+camera slept. The operations to locate the label are:
+
+1. Reconnect with a LUT adjustment page open and run
+   `work/dump_param_mode.py` (read-only): dump `0x700fd400..0x700fdc00`,
+   resolve pointers into guires, and inspect the object used by
+   `native_parameter_mode` at `0x4020f96d`.
+2. Static disassembly from the LUT parameter adapter and the stock
+   parameter-mode continuation to the row-label draw; identify whether the
+   label input is a UTF-16 pointer or a text ID.
+3. If pointer: embed a UTF-16 `Blend Opacity` string and redirect only the
+   LUT row.
+4. If text ID: add a spare ID/string entry in guires and use it only when
+   `0xb30002ca == 1`.
+
+The live row descriptor `u32 label` is zero; the label is static, so it is
+not a row-descriptor edit.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
