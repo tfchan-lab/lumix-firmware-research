@@ -1934,6 +1934,81 @@ No card write or flash yet.
 
 ---
 
+## 2026-11-25 - Portra samples expose native contrast contamination
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** `slider-package-20261125T063816Z`, package SHA-256
+`2d24738680b46d58a2ac7c8284084e2e16c245e2bd30634e21181b6137416dff`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; card mounted
+
+### Sample result
+
+The three Portra samples show the opacity ordering clearly:
+
+| Sample | Mean Y | Crop Y std | EXIF Contrast | Exposure |
+|---|---|---|---|---|
+| `Portra+5.JPG` | 126.9 | 63.1 | 2 (high) | 1/160 |
+| `Portra+0.JPG` | 123.9 | 53.9 | 0 (normal) | 1/200 |
+| `Portra-5.JPG` | 127.0 | 49.1 | 1 (low) | 1/200 |
+
+The crop contrast falls monotonically, so the LUT opacity is applied. But
+the EXIF `Contrast` tag changes exactly with the tick (`10 -> high`,
+`5 -> normal`, `0 -> low`), and the `+5` shot is 1/3 stop brighter.
+
+Cause: the UI still wrote the native contrast parameter array
+`0x70101253[0]` in `op_get`, `op_set` and `op_title_seed`. That array feeds
+the camera's native contrast processing, so the slider was changing both
+opacity and native contrast. The samples are therefore not a pure opacity
+test.
+
+### Fix
+
+- `op_get`, `op_set` and `op_title_seed` no longer write `0x70101253[0]`;
+  they keep only the display mirror `0x70101258`.
+- the shipped LUT values adapter keeps the native parameter array neutral
+  (`5,5,5,5,0`);
+- the old 0.2.4 display substitution is restored at `0x403244b1`
+  (`jmp op_draw_value`), using the same safe trampoline as the old build:
+  save `d0,d1,a0,mdr,psw`, substitute the record tick only for a loaded LUT
+  style, otherwise use the stock `0x702250fb` map, restore, set `a1`, and
+  continue at `0x403244b9`;
+- the number display therefore moves without touching the native image
+  parameter.
+
+### Package
+
+- `work/opacity-native/slider-package-20261125T063816Z/GM1__V11.bin`
+- package `2d247386...16dff`;
+- program `e2098d85...4192d`;
+- stock restore `cad4ea27...c007`;
+- previous Stage B build `0d1a98cc...8dd4c` backed up on the PC.
+
+### Offline gates
+
+- native array write removed from the title seed; the seed writes only the
+  mirror;
+- draw hook encoding and trampoline checked;
+- adoption hook, variable blend, embedded neutral payload and setter
+  reblend still pass;
+- placement and stock-hook encoding pass.
+
+### Camera test
+
+1. Install and reboot.
+2. Stock profile and stock sliders: normal, no crash.
+3. LUT cell: the number/bar must still move `-5..+5`.
+4. Image: `+5` full LUT, `0` mix, `-5` neutral. The native contrast should
+   no longer swing with the tick; check the EXIF `Contrast` tag and exposure
+   if possible. For a clean comparison, use manual exposure or exposure lock
+   so the three shots have the same shutter speed.
+5. Reconnect USB for the dump.
+
+The blend remains one-shot per adoption/step, not per frame. The observed
+adjustment delay is the table computation on each step; it can be reduced
+later with the old lookup table if needed.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
