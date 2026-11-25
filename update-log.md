@@ -2434,6 +2434,50 @@ No firmware was built or flashed for this entry.
 
 ---
 
+## 2026-11-25 - No WSL/VM; read-only draw-state test
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** none (read-only test preparation)
+
+### Environment check
+
+- WSL is not installed; `wsl -l -v` reports no distribution.
+- The MN10300 toolchain is the MSYS2 cross-binutils: assembler, linker,
+  objdump, etc.
+- There is no `mn10300-elf-run`, no QEMU MN10300 target, and no simulator in
+  the workspace.
+
+So the stock-page hypothesis is not VM-verified. The practical dynamic test
+without a VM is a read-only dump on the failing stock page, compared with a
+LUT page.
+
+### Script
+
+`work/dump_draw_state.py` reads, read-only:
+
+- mode `0x700fcec8`;
+- style `0x70101252`, parameter array `0x70101253`, mirror `0x70101258`;
+- current row `0x70102930`;
+- draw raw `0x702267d8`;
+- page style `0x702250fa`, row values `0x702250fb`;
+- owner `0x708f47a4` and the eight-byte row descriptors at owner + 160,
+  including the `u32 label` field;
+- the record and Stage B traces.
+
+### Interpretation
+
+- Stock page shows `draw raw = 0` and `page style` 7..16 with the LUT mask
+  set: the value hook would take the LUT path; the page gate is needed.
+- Stock page shows a stock style (0..6) or `draw raw != 0`: the hypothesis
+  is wrong; the crash is in the hook's stock path/register handling, and a
+  gate will not fix it.
+- LUT page is the control; its row descriptor also identifies the label
+  field for the `Blend Opacity` patch.
+
+No build, copy, or flash was made.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
