@@ -3041,6 +3041,72 @@ not affect stock, bar, number or blend.
 
 ---
 
+## 2026-11-25 - B10/B11 cause found; B12 targets the row-label ID
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** `slider-package-20261125T113757Z`, package SHA-256
+`e8042d3e5e31075f44ecf3b1da185069571fcfe145019d11a71bdf576480dab7`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; card not mounted
+at package time
+
+### Why B10/B11 did nothing
+
+The two hooks at `0x402c8c05` / `0x402c8c25` are **not** the row-label
+lookup. They call `0x402f9171` with table `0x404604a6`, which only contains:
+
+- id `8` -> text `0x0d6b`;
+- id `15` -> text `0x0805`;
+- end marker `0xffff`.
+
+The live selectors there are `0x70225102 = 2` and `0x70225103 = 0`, so both
+calls return `0xffff`. B10/B11 compared for `0x1040` / `0x0c67`, which could
+never match. The calls are real, but they are a different label/title path.
+
+### The row-label path
+
+The adjustment-row function has two text draws:
+
+- **row label** at `0x403246e5` / `0x40324715`, text ID from table
+  `0x40460796` (`row -> label ID`): row 0 -> `0x0def`;
+- **number** at `0x403247a2`, text ID from table `0x404604b2`
+  (`tick -> value text`); this is the B9 hook at `0x40324731`.
+
+So B9's `op_draw_label` is the **number**, not the row label. The visible
+`Contrast` is the `0x0def` label draw.
+
+### B12
+
+- hook `0x40324654` (the `cmp 6849,d2 / bne` after the row-label scan);
+- gate `0xb30002ca == 1` (LUT page) and row `0`;
+- original label ID `0x0def` -> blank/space ID `0x0c64`;
+- reproduce the original branch:
+  - `d2 == 0x1ac1` -> `0x4032471c` (stock value path);
+  - otherwise -> `0x4032465d`;
+- stock pages keep `0x0def`; the B9 number/bar path is untouched.
+
+Trace:
+
+- `b30017b4` label-ID hook hit count;
+- `b30017b8 + n*4`: original 16-bit label ID, row, page state.
+
+### Package
+
+- `work/opacity-native/slider-package-20261125T113757Z/GM1__V11.bin`
+- package `e8042d3e...0dab7`;
+- program `1405ca95...f11228`;
+- B11 `d1c9db78...edbe7` is on the card; B9 `85792aba...4bfd3` is backed up.
+
+### Test
+
+1. Stock profile: row label still `Contrast`; switching/sliders normal.
+2. LUT page: row-0 label should be blank; bar, number and blend unchanged.
+3. If the label remains: reconnect and dump `b30017b4`/`b30017b8`; the ring
+   shows whether the hook ran and which label ID was used.
+4. If the number shifts left after blanking, that is expected because the
+   label width is now the blank/space width; it can be fine-tuned later.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
