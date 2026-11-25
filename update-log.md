@@ -3019,13 +3019,12 @@ the only remaining item is the row label.
 | B9 | none | - | `Contrast` |
 | B10 `d5f05e81` | blank at label lookup calls `0x402c8c05`/`0x402c8c25` | `0x1040` | `Contrast` unchanged |
 | B11 `d1c9db78` | same hooks, blank both candidates + lookup ring | `0x1040`, `0x0c67` | `Contrast` unchanged |
+| B12 `e8042d3e` | row-label ID at `0x40324654`: `0x0def` -> `0x0c64` on LUT row 0 | `0x0def` | pending camera test |
 
-The B10/B11 hooks did not remove the label. Possible causes:
-
-1. the row label is not drawn through those two lookup calls;
-2. the lookup runs before the absolute row-1 state is 1, so the gate
-   returns the original text ID;
-3. text ID `0` is not blank in the label context.
+The B10/B11 hooks did not remove the label. **Resolved in the B12 entry
+below:** those calls use table `0x404604a6`, which only has IDs `8` and `15`;
+the live selectors `2`/`0` return `0xffff`, so the blank condition never
+matched. The row-label draw is a separate path.
 
 B11 records the evidence at:
 
