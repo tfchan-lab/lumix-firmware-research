@@ -2009,6 +2009,78 @@ later with the old lookup table if needed.
 
 ---
 
+## 2026-11-25 - Ricoh samples confirm decoupling; number text hook fixed
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** `slider-package-20261125T065445Z`, package SHA-256
+`a9e6ca975d18c7781230092b8fa365d1c8235d1a67bb879737274befca55ea80`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; card mounted
+
+### Ricoh samples
+
+All three Ricoh shots have identical exposure and neutral native contrast:
+
+| Sample | Exposure | ISO | Contrast | Crop Y mean/std |
+|---|---|---|---|---|
+| `Ricoh+5.JPG` | 1/200 | 200 | 0 | 102.6 / 66.6 |
+| `Ricoh+0.JPG` | 1/200 | 200 | 0 | 99.3 / 67.2 |
+| `Ricoh-5.JPG` | 1/200 | 200 | 0 | 102.1 / 68.7 |
+
+The native `Contrast` tag stays `0` and the exposure is identical, so the
+Stage B2 fix decoupled opacity from the stock contrast. The crop contrast
+is nearly constant; the LUT effect is color/tonal, not a native contrast
+swing. The pixel-wise midpoint is not a clean test because the three shots
+are not registered and the scene can move; the EXIF and crop statistics are
+the reliable evidence.
+
+### Why the number did not move
+
+The bar follows the display mirror, but the numeric text comes from a
+separate site at `0x40324731`. The dump showed:
+
+- draw raw `0x702267d8 = 0` (row 0);
+- selected style `11`;
+- row-value array `0x702250fb = [5,5,5,5,0,0,11,2,...]`;
+- parameter array `[5,5,5,5,0]` (neutral);
+- mirror `0`.
+
+The text site reads the neutral row-value array, so the number stayed at 5
+even though the value/bar hook returned the tick.
+
+### Fix
+
+- new `op_draw_label` hook at `0x40324731` (6-byte site):
+  - save `d0,d1,a0,a1,mdr,psw`;
+  - for row 0 of a loaded LUT, read the tick and jump to the stock text
+    lookup `0x4032473f` with the stock native text table `0x404604b2`;
+  - otherwise set `a0 = 0x702250fb` and jump to the original stock path
+    `0x40324737`;
+- the number therefore uses the same `-5..+5` labels as the bar, not a
+  private `0..10` map.
+
+### Package
+
+- `work/opacity-native/slider-package-20261125T065445Z/GM1__V11.bin`
+- package `a9e6ca97...5ea80`;
+- program `574379a3...e410f`;
+- stock restore `cad4ea27...c007`;
+- previous B2 build `2d247386...16dff` backed up on the PC.
+
+### Camera test
+
+1. Install and reboot.
+2. Stock profiles and sliders: normal, no crash.
+3. LUT cell: both the number and the bar must move `-5..+5`.
+4. Image: `+5` full LUT, `0` mix, `-5` neutral. Native `Contrast` should
+   stay `0`.
+5. Reconnect USB for a dump if anything still disagrees.
+
+The dump also showed the record reset to 100 and the Stage B counters at 0,
+so power-cycle persistence is still pending; that is separate from this
+display fix.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
