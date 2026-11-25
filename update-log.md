@@ -2297,6 +2297,58 @@ LUT-only custom text entry.
 
 ---
 
+## 2026-11-25 - Matrix-based revert to Stage B original
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** `slider-package-20261125T062028Z`, package SHA-256
+`0d1a98ccb13248bcc36b6b148fc77102be30e8c5cab82c8e9b7d3e4a0498dd4c`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; card mounted
+
+### Candidate matrix
+
+| Build | Native array | Value hook | Text hook | Stock switch | Stock sliders | LUT bar | LUT number | Contrast decoupled |
+|---|---|---|---|---|---|---|---|---|
+| UI `8b954b` | yes | no | no | ok | ok | yes | yes | n/a |
+| Stage B `0d1a98cc` | yes | no | no | ok | ok | yes | yes | no |
+| B2 `2d247386` | no | yes | no | ok | crash | yes | no | yes |
+| B4 `4d24b64c` | no | yes | yes | ok | crash | yes | yes | yes |
+| B5 `b098ebd7` | no | no | no | ok | ok | no | no | yes |
+| B6 `ab0b0776` | no | yes | no | ok | crash | yes | no | yes |
+
+The matrix shows the trade-off clearly:
+
+- the bar follows either the native array write or the value draw hook;
+- the value draw hook is present in every stock-slider crash
+  (B2/B4/B6);
+- the native array write restores the bar and number but also feeds the
+  native contrast (Stage B original);
+- B5 is the only stock-safe, contrast-decoupled build, but it has no bar;
+- there is no build with stock sliders + LUT bar + decoupled contrast.
+
+The requested combination (stock sliders + LUT bar/blend) is therefore
+**Stage B original `0d1a98cc`**, accepting the known native-contrast
+coupling. No new modification was made.
+
+### Package
+
+- `work/opacity-native/slider-package-20261125T062028Z/GM1__V11.bin`
+- package `0d1a98cc...8dd4c`;
+- program `4358340a...2ce0ff`;
+- stock restore `cad4ea27...c007`;
+- B2 build `2d247386...16dff` backed up on the PC.
+
+### Test
+
+1. Stock switching and stock sliders.
+2. LUT cell: bar/number `-5..+5`, blend at `+5/0/-5`.
+3. The native Contrast tag will move with the tick again; that is the
+   known Stage B coupling, not a new regression.
+
+A future LUT-only bar path could remove the coupling without the value hook,
+but that is a separate design task, not a blind patch.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
