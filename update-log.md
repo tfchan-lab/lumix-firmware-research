@@ -2677,6 +2677,58 @@ The pool LIT1 object has stayed at `0xb3000220` (row 1 state at
 
 ---
 
+## 2026-11-25 - B8 verified: stock + LUT bar + blend + decoupled contrast
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** B8 `16f12181...03d55` (flashed)
+**Camera state:** DMC-GM1, official 1.1, internal `0110`
+
+### Result
+
+- stock profile switching and stock sliders: working;
+- LUT blend with press/dial/touchscreen: working;
+- LUT bar: working;
+- LUT number: stays native (accepted; optional);
+- native Contrast: decoupled (parameter array stays `[5,5,5,5,0]`).
+
+This is the first candidate with all of the required behaviors.
+
+### Portra +4 dump
+
+| Item | Value |
+|---|---|
+| style / page style | 7 / 7 |
+| draw raw | 0 |
+| row 1 state seen by hook | 1 |
+| draw path | 1 (LUT tick) |
+| owner trace | `0x708f47a4` |
+| draw hook hits | 125 |
+| record cell 0 | 90 |
+| mirror | 9 |
+| parameter array | `[5,5,5,5,0]` |
+
+### B7 failure cause
+
+`mov 0x708f47a4,a0` loads the address constant, not the owner pointer
+stored at that address. B7 therefore read `0x708f47a4 + 170` and saw 0.
+B8 reads the live LIT1 row 1 state directly at `0xb30002ca`.
+
+### Remaining cosmetic item
+
+The row label is still `Contrast`. The live row descriptor's `u32 label`
+field is zero, so the label is static/drawn elsewhere. The English
+parameter-name pointer table is at guires `0x112a80`
+(`0x112abc -> 0x40b575f8 -> "Contrast"`), but the label draw/index path is
+still unmapped. This is a separate label-only task and must not disturb B8.
+
+### Package
+
+- B8 `work/opacity-native/slider-package-20261125T101606Z/GM1__V11.bin`
+- package `16f12181...03d55`;
+- B7 `05305767...04c80` backed up on the PC.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
