@@ -2349,6 +2349,91 @@ but that is a separate design task, not a blind patch.
 
 ---
 
+## 2026-11-25 - Matrix verification and next complete-candidate plan
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** none (verification and design only)
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; no flash today
+
+### Verified matrix
+
+| Build | Native array | Value hook | Text hook | Stock switch | Stock sliders | LUT bar | LUT number | Contrast decoupled |
+|---|---|---|---|---|---|---|---|---|
+| UI `8b954b` | yes | no | no | ok | ok | yes | yes | n/a |
+| Stage B `0d1a98cc` | yes | no | no | ok | ok | yes | yes | no |
+| B2 `2d247386` | no | yes | no | ok | crash | yes | no | yes |
+| B4 `4d24b64c` | no | yes | yes | ok | crash | yes | yes | yes |
+| B5 `b098ebd7` | no | no | no | ok | ok | no | no | yes |
+| B6 `ab0b0776` | no | yes | no | ok | crash | yes | no | yes |
+
+The two closest builds are:
+
+- **Stage B `0d1a98cc`**: stock sliders + LUT bar/number + blend, but the
+  native Contrast is coupled;
+- **B5 `b098ebd7`**: stock sliders + blend + decoupled Contrast, but no
+  bar/number.
+
+B2 and B6 behave the same: stock switching works, stock sliders crash,
+LUT bar/blend works, number stays native.
+
+### Root-cause correlation
+
+The value draw hook is present in every stock-slider crash and absent in
+both stock-safe builds. The likely mechanism is that the hook can take the
+LUT path on a stock page because the style/mask state is still valid from
+the LUT cell. The stock path then draws a LUT tick into the stock slider,
+which crashes back to preview.
+
+### Planned complete candidate
+
+Base: **B5** (stock-safe, decoupled, no draw hooks, no native array writes).
+
+Add one **strictly page-gated value draw hook**:
+
+- a page flag in the library tail, e.g. `b3001794`;
+- `op_title_seed` clears the flag on entry and sets it only when the LUT
+  adjustment-page predicate passes;
+- `op_get` / `op_set` also set it on the LUT success path and clear it on
+  the stock pass-through paths;
+- the draw hook checks the flag first:
+  - flag 0: execute only the original `a1 = 0x702250fb` map and jump to
+    `0x403244b9`, with no LUT call at all;
+  - flag 1: save registers, read the record tick, substitute it for the
+    bar, restore, continue;
+- the native parameter array stays untouched, so the Contrast remains
+  decoupled;
+- number/label remain optional.
+
+Diagnostic traces for the next session:
+
+- `b3001794` page flag;
+- `b3001795` draw-hook path (0 stock / 1 LUT);
+- `b3001796` last draw `d0`;
+- `b3001797` last page style;
+- `b3001798` last tick.
+
+### Verification gate
+
+1. Stock profile: open the slider page. The flag must be 0 and the draw
+   hook must take the stock path; the page must not crash.
+2. LUT cell: flag 1, bar moves, blend still applies.
+3. If stock still crashes with flag 0, the hook's mere presence is unsafe
+   and the bar needs a non-hook source; the trace will show this before
+   another attempt.
+
+### Label
+
+The English parameter-name pointer table is at guires `0x112a80`;
+`0x112abc -> 0x40b575f8 -> "Contrast"`. The live row list is at
+`0x708f47a4 + 160 = 0x708f4844`, eight bytes per row
+(`u16 id`, `u8 state`, `u8 flags`, `u32 label`). The LUT-page row-label
+dump will identify the label field so a LUT-only `Blend Opacity` entry can
+be added without touching stock labels.
+
+No firmware was built or flashed for this entry.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
