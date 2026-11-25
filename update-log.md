@@ -2081,6 +2081,71 @@ display fix.
 
 ---
 
+## 2026-11-25 - Fuji samples clean; stock draw path uses page style
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** `slider-package-20261125T070957Z`, package SHA-256
+`4d24b64c26fea7e33535c70d6c1291fdf96bf77f58a5f3590a35642111d6ceb9`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; card mounted
+
+### Fuji samples
+
+| Sample | Exposure | Aperture | ISO | Contrast |
+|---|---|---|---|---|
+| `Fuji+5.JPG` | 1/200 | F2.2 | 200 | 0 |
+| `Fuji+0.JPG` | 1/200 | F2.2 | 200 | 0 |
+| `Fuji-5.JPG` | 1/200 | F2.5 | 200 | 0 |
+
+The native contrast is neutral at all three; the `-5` shot is darker only
+because the aperture stopped down to F2.5. The LUT opacity is decoupled from
+the stock contrast.
+
+The camera dump at the Fuji cell (style 9, cell 2):
+
+- record cell 2 = 0, others 100;
+- adoption blends 219, setter reblends 10;
+- parameter array `[5,5,5,5,0]`, mirror 0;
+- draw raw 0, page style 9, row-value array `[5,5,5,5,0,0,9,2,0,14,10,...]`.
+
+The image path and the LUT display are working.
+
+### Stock-profile regression
+
+After the B3 text-map hook, stock profiles broke. The B2/B3 draw hooks read
+the selected style from `0x70101252` (`STYLE`). That variable can still hold
+the last LUT style while a stock profile page is open. The old 0.2.4 draw
+trampolines used the page-scoped style byte `0x702250fa` instead, and were
+stock-safe.
+
+Change in B4:
+
+- both `op_draw_value` and `op_draw_label` now read `0x702250fa`;
+- the getter/setter/seed keep `0x70101252`, matching the old build's row
+  selection;
+- the stock paths still use `0x702250fb` and the original continuations.
+
+### Package
+
+- `work/opacity-native/slider-package-20261125T070957Z/GM1__V11.bin`
+- package `4d24b64c...6ceb9`;
+- program `79cfe76e...374de5`;
+- stock restore `cad4ea27...c007`;
+- B3 build `a9e6ca97...5ea80` backed up on the PC.
+
+### Camera test
+
+1. Install and reboot.
+2. Stock profiles: select one, open its adjustment page, move its sliders.
+   The page must be normal and the sliders must apply.
+3. LUT cell: number and bar still move `-5..+5`; image still follows the
+   opacity; native `Contrast` stays 0.
+4. If stock still breaks, report whether it is a crash, a wrong number/bar,
+   or a non-responsive slider, and leave a stock profile page open for a
+   dump. The dump's `draw raw`/`draw style`/row-value array will show whether
+   the draw hook is still taking the LUT path.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
