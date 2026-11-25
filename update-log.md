@@ -2729,6 +2729,67 @@ still unmapped. This is a separate label-only task and must not disturb B8.
 
 ---
 
+## 2026-11-25 - Matrix update: B7 and B8
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** B8 `16f12181...03d55` (current working build)
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; Portra +4
+
+### Updated candidate matrix
+
+| Build | Native array | Value hook gate | Text hook | Stock switch | Stock sliders | LUT bar | LUT number | Contrast decoupled |
+|---|---|---|---|---|---|---|---|---|
+| UI `8b954b` | yes | none | no | ok | ok | yes | yes | n/a |
+| Stage B `0d1a98cc` | yes | none | no | ok | ok | yes | yes | no |
+| B2 `2d247386` | no | none | no | ok | crash | yes | no | yes |
+| B4 `4d24b64c` | no | none | yes | ok | crash | yes | yes | yes |
+| B5 `b098ebd7` | no | no hook | no | ok | ok | no | no | yes |
+| B6 `ab0b0776` | no | none | no | ok | crash | yes | no | yes |
+| B7 `05305767` | no | owner row-state | no | ok | ok | no | no | yes |
+| B8 `16f12181` | no | absolute LIT1 row 1 | no | ok | ok | yes | no | yes |
+
+B8 is the first build with all required behavior: stock switching,
+stock sliders, LUT blend, LUT bar, and decoupled native contrast.
+
+B7 failed because `mov 0x708f47a4,a0` loads the absolute address, not the
+owner pointer stored there; it read `0x708f47a4 + 170` and saw zero. B8
+gates directly on the live LIT1 row 1 state at `0xb30002ca`.
+
+### Next candidate: number + label
+
+The number fix is the text-map hook at `0x40324731`, gated by the same
+absolute `0xb30002ca == 1` condition:
+
+- LUT page: feed the record tick to the stock native text table
+  `0x404604b2`, jump to `0x4032473f`;
+- stock page: original `a0 = 0x702250fb`, jump to `0x40324737`;
+- no stock-page LUT calls.
+
+The label is separate. The live row descriptor `u32 label` is zero, so the
+row label is static. The English parameter-name pointer table is at guires
+`0x112a80`; `0x112abc -> 0x40b575f8 -> "Contrast"`. The label draw/index
+path is not yet located.
+
+### Label mapping operations
+
+1. Read-only dump of the parameter-mode object at `0x700fd4d4` (used by
+   `native_parameter_mode` at `0x4020f96d`) and nearby pages; look for a
+   text ID, label pointer, or table base for row 0.
+2. Static disassembly from the LUT parameter adapter and the stock
+   parameter-mode continuation to the row-label draw call; identify the
+   label input (pointer or text ID).
+3. If the label is a pointer, embed a UTF-16 `Blend Opacity` string and
+   redirect only the LUT row label.
+4. If it is a text ID, add a spare ID/string entry in guires and use it
+   only when the absolute row 1 state is 1.
+5. If static/dump evidence is ambiguous, a label-draw trace build records
+   the input for LUT vs stock; the substitution is gated the same way as
+   the bar.
+
+No change to the working B8 gate or blend.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
