@@ -1667,6 +1667,78 @@ Together with the seed trace (`b3001750..53`), one session shows:
 
 ---
 
+## 2026-11-25 - Getter bound inversion found and fixed
+
+**Phase:** Phase 4 - restore opacity
+**Build/package:** `slider-package-20261125T053717Z`, package SHA-256
+`8b954bbb1552bcb0376b6b2e0b1810434ba2e58a004887b7811e2734db592e29`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`, ROM/RAM policy `0`
+
+### Defect
+
+Candidate `c4f19c` moved `+5 -> +4` with buttons, dial and touch, but could
+not move back `+4 -> +5`; selecting another LUT restored `+5`. The stored
+record was `90` for the changed cell.
+
+### Root cause
+
+`op_rec_get` used:
+
+```
+cmp 10,d0
+bcs .Lrg_default
+```
+
+In this codebase `bcs` is the proven unsigned *lower-than* condition; the
+same condition is used correctly by `cmp 7,d1; bcs` to reject stock styles
+below 7. Therefore every valid cell `0..9` branched to the 100% default
+before the record was read. The setter wrote the record correctly, but every
+later read returned `100`, so `op_tick` always returned `10`.
+
+This one instruction explains the whole candidate pattern:
+
+| Candidate | Getter behavior | Observed |
+|---|---|---|
+| F21A | never seeded | static `+0` |
+| 2b18 | always `100` | `+5 -> +4`, no return, re-entry `+5` |
+| 69dc | always `100` | draw hook crash; bar moved |
+| 4783 | always `100` | wrapper crash; same revert |
+| ring `c4f19c` | always `100` | `+5 -> +4`, no return; ring logs tick `10` |
+
+The draw-hook and builder-wrapper crashes were separate ABI clobbers and are
+not part of the remaining defect.
+
+### Fix
+
+- `op_rec_get` now uses `cmp 9,d0; bhi .Lrg_default`, so cells `0..9` read
+  the record and only out-of-range cells default to 100.
+- `check_slider.py` now fails if the inverted lower-than bound returns.
+- Diagnostic counters separated so one dump is unambiguous:
+  - `b3001750/51` seed hits/tick;
+  - `b3001752/53` getter hits/tick;
+  - `b3001754/55` setter hits/tick;
+  - `b3001770..74` step hits/direction/before/after/cell;
+  - `b3001775..77` record-get cell/init/raw byte;
+  - `b3001760..6b` getter ring `(style, cell, tick)`.
+
+### Verification
+
+- build, placement, hook and ABI audit pass;
+- package SHA-256 `8b954bbb...592e29`;
+- program SHA-256 `4358340a...2ce0ff`;
+- package prepared but not yet copied: the card reader was mounted with no
+  media at the time of writing.
+
+### Expected camera behavior
+
+- stock profiles and stock sliders unchanged;
+- fresh LUT records show `+5`; stored records show their own tick;
+- both directions work across `0..10`;
+- leaving and re-entering the adjustment page preserves the stored tick;
+- the image is still unchanged until the cached preblend path lands.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
