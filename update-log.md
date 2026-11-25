@@ -2532,6 +2532,62 @@ flag/path trace build is required.
 
 ---
 
+## 2026-11-25 - Stock-page crash dump and row-state gate
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** B7 `05305767...04c80` (prepared, card not mounted)
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; B6 flashed
+
+### Control vs crash dump
+
+| Item | LUT page (control) | Stock page after crash |
+|---|---|---|
+| mode | 0 | 0 |
+| style | 7 | 7 |
+| draw raw `0x702267d8` | 0 | 0 |
+| page style `0x702250fa` | 7 | 7 |
+| mirror | 10 | 0 |
+| row states | row0=4, rows1..4=1 | rows0..4=4 |
+
+The stock page satisfies the value hook's LUT precondition (`draw raw 0`,
+page style 7, mode 0). The difference is the **row-state table**: the LUT
+page hides rows 1..4 (state 1), while the stock page exposes all rows
+(state 4). The post-crash dump therefore confirms the precondition and
+identifies a page discriminator.
+
+### B7 gate
+
+`op_draw_value` now checks the live owner row 1 state before any LUT call:
+
+- owner `0x708f47a4`, row 1 state at owner + 170;
+- if state != 1, take the original `0x702250fb` map and jump to
+  `0x403244b9`; no `op_lut_percent` call;
+- if state == 1, run the existing LUT tick substitution;
+- traces: `b3001790` row 1 state, `b3001791` path (0 stock / 1 LUT).
+
+This is a data-backed gate from the live dump, not a style guess.
+
+### Package
+
+- `work/opacity-native/slider-package-20261125T095550Z/GM1__V11.bin`
+- package `05305767...04c80`;
+- program `b1b18602...dc448`;
+- B6 `ab0b0776...30fa1` backed up on the PC.
+
+The card reader showed no media at copy time, so B7 is not on the card yet.
+
+### Test
+
+1. Stock slider: must not crash; gate trace `b3001791` must be 0.
+2. LUT page: bar moves; gate trace `b3001791` must be 1.
+3. If stock still crashes with trace 0, the hook's stock path itself is
+   unsafe and the bar needs a non-hook source.
+
+The row descriptor label field is zero; the `Contrast` label is static, so
+the `Blend Opacity` rename remains a separate label-table/draw task.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
