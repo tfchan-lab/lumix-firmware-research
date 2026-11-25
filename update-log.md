@@ -1726,8 +1726,10 @@ not part of the remaining defect.
 - build, placement, hook and ABI audit pass;
 - package SHA-256 `8b954bbb...592e29`;
 - program SHA-256 `4358340a...2ce0ff`;
-- package prepared but not yet copied: the card reader was mounted with no
-  media at the time of writing.
+- copied to the card as `D:\\GM1__V11.bin`, hash verified;
+- previous candidate backed up as
+  `work/card-backup/GM1__V11-before-getter-fix.bin`
+  (SHA-256 `c4f19cfe...5525a9`), not yet flashed.
 
 ### Expected camera behavior
 
