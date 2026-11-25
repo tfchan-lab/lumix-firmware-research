@@ -2938,6 +2938,55 @@ The bar, number and blend gates are unchanged from B9.
 
 ---
 
+## 2026-11-25 - B10 label still visible; B11 blanks both candidates with trace
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** `slider-package-20261125T110636Z`, package SHA-256
+`d1c9db78d9ddf2b13f72e858a92bb1a590851b2df40402f7b61fcc44b04edbe7`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; camera/card not
+connected at package time
+
+### B10 result
+
+The LUT label still appeared. B10 hooked the two label lookup calls and
+blanked only text ID `0x1040`. The remaining label means either:
+
+- the visible label is the other lookup ID `0x0c67`; or
+- the lookup happened when the absolute row-1 state was not 1, so the
+  gate did not blank it.
+
+### B11
+
+B11 keeps the same two call hooks but:
+
+- blanks both candidate text IDs `0x1040` and `0x0c67` when the live
+  LIT1 row-1 state is 1;
+- records a four-entry label lookup ring:
+  - `b300179a` hit count;
+  - `b30017a0 + n*4`: 16-bit text ID, row-1 state, page style.
+
+This is both a possible fix and the diagnostic: if the label disappears,
+the ring shows which ID was used; if it remains, the ring shows whether the
+label path/timing is different.
+
+### Package
+
+- `work/opacity-native/slider-package-20261125T110636Z/GM1__V11.bin`
+- package `d1c9db78...edbe7`;
+- program `cf313657...b2f62`;
+- B10 `d5f05e81...f920f` is on the card; B9 `85792aba...4bfd3` is backed up.
+
+### Next test
+
+1. Mount the card, copy B11, flash.
+2. Open the LUT adjustment page.
+3. If the label is blank: success; the ring identifies the used ID.
+4. If the label remains: reconnect and dump the ring. The entries show the
+   text IDs, row-1 state and page style at each lookup, so the next hook can
+   target the real label path or timing.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
