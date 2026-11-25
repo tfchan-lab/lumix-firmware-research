@@ -2904,6 +2904,40 @@ B9 remains the stable functional candidate regardless.
 
 ---
 
+## 2026-11-25 - B10: blank the LUT row label
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** `slider-package-20261125T105533Z`, package SHA-256
+`d5f05e812260d3cc21969b793c7ff8cd2882b7d399144ecddd559181547f920f`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; card mounted
+
+Blanking the label is much simpler than adding a new texture:
+
+- the Contrast row label is text ID `0x1040`;
+- text ID `0` is the existing blank/space record at `0x40d2620c`;
+- B10 hooks the two label-lookup calls at `0x402c8c05` / `0x402c8c25`
+  and returns text ID `0` when the lookup result is `0x1040` and the live
+  LIT1 row 1 state is `1` (LUT page);
+- stock pages keep `0x1040`, so the stock Contrast label is unchanged.
+
+The bar, number and blend gates are unchanged from B9.
+
+### Package
+
+- `work/opacity-native/slider-package-20261125T105533Z/GM1__V11.bin`
+- package `d5f05e81...f920f`;
+- program `96b319c2...2ddb5`;
+- B9 `85792aba...4bfd3` backed up on the PC.
+
+### Test
+
+1. Stock profile: label still `Contrast`; sliders unchanged.
+2. LUT page: row label should be blank; bar/number/blend unchanged.
+3. If the label remains, the Contrast label is using the other lookup
+   result/text ID; next step is to target `0x0c67` or return `0xffff`.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
