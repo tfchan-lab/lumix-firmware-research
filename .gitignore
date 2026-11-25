@@ -1,3 +1,6 @@
+# Local LUT collection (kept out of Git for now)
+LUTs/
+
 __pycache__/
 *.pyc
 firmware/
