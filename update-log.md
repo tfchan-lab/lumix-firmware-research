@@ -2588,6 +2588,52 @@ the `Blend Opacity` rename remains a separate label-table/draw task.
 
 ---
 
+## 2026-11-25 - B7 stock fixed; gate trace blocks LUT bar
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** B7 `05305767...04c80` flashed
+**Camera state:** DMC-GM1, official 1.1, internal `0110`
+
+### Result
+
+- stock switching and stock sliders: working;
+- LUT blend with press/dial/touchscreen: working;
+- LUT bar and number: not changing.
+
+### LUT-page dump
+
+| Item | Value |
+|---|---|
+| style / page style | 7 / 7 |
+| draw raw | 0 |
+| mode | 0 |
+| live row 1 state | 1 |
+| record | `[0,0,100,...]` |
+| mirror | 0 |
+| setter / step hits | 20 / 31 |
+| adoption blends / reblends | 245 / 20 |
+| draw gate row 1 state `b3001790` | 0 |
+| draw gate path `b3001791` | 0 |
+
+The live row state is 1, but the draw hook recorded 0 and took the stock
+path. That explains why the bar stays native while the blend still works.
+The trace may be stale, or the owner/row base read by the hook is different
+at draw time.
+
+### Next
+
+Press once on the LUT adjustment page and re-dump. If the gate trace still
+shows 0, add an owner-pointer/draw counter trace in the value hook to
+distinguish:
+
+- owner pointer zero at draw time;
+- owner pointer valid but row offset/state read wrong;
+- draw hook not running after the page build.
+
+No new flash is needed for the re-dump.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
