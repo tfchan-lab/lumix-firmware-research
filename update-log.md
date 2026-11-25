@@ -2146,6 +2146,71 @@ Change in B4:
 
 ---
 
+## 2026-11-25 - Stock switching restored; draw hooks removed
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** `slider-package-20261125T072316Z`, package SHA-256
+`b098ebd73526d75f2f536b94060577733dc06cc387710933f04b56949fecac5a`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; card mounted
+
+### Stock regression
+
+B4 still could not switch to stock profiles at all. The two draw hooks
+(`0x403244b1`, `0x40324731`) are on the stock drawing path. Even with the
+page-style byte `0x702250fa`, they are not safe there.
+
+B5 removes both draw hooks:
+
+- `op_draw_value` and `op_draw_label` remain in the module as unused code;
+- the stock drawing path is exactly the stock code again;
+- the LUT bar still follows the display mirror `0x70101258`;
+- the adoption/setter blend and the getter/setter/seed hooks remain;
+- the numeric readout may stay at the native value; the bar and blend are
+  the required behavior.
+
+### Fuji samples
+
+| Sample | Exposure | Aperture | ISO | Contrast |
+|---|---|---|---|---|
+| `Fuji+5.JPG` | 1/200 | F2.2 | 200 | 0 |
+| `Fuji+0.JPG` | 1/200 | F2.2 | 200 | 0 |
+| `Fuji-5.JPG` | 1/200 | F2.5 | 200 | 0 |
+
+Native contrast is neutral at all three; the `-5` shot is darker only
+because the aperture stopped down to F2.5. The blend endpoints and the
+native-contrast decoupling are confirmed.
+
+### Row label
+
+The camera's guires resource contains no English UTF-16 `Opacity` string,
+and the `Blend` hits are German aperture text (`Blenden`). A `Blend
+Opacity` label therefore needs either:
+
+- a custom UTF-16 string plus a label-render hook, or
+- a spare text ID / text-table entry for the LUT row.
+
+The row-label descriptor dump was not taken: the camera went to sleep before
+the read. The next session should leave a LUT adjustment page open and
+reconnect so the live row descriptor and text ID can be mapped.
+
+### Package
+
+- package `b098ebd7...cac5a`;
+- program `89a58bd1...1baf4`;
+- stock restore `cad4ea27...c007`;
+- B4 build `4d24b64c...6ceb9` backed up on the PC.
+
+### Camera test
+
+1. Install and reboot.
+2. **Stock profiles first**: switching must work and their sliders must
+   operate.
+3. LUT cell: the bar must move `-5..+5`; the image must follow the blend.
+4. The number may stay at the native value; the label is still `Contrast`.
+5. Reconnect on a LUT adjustment page for the row-label dump.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
