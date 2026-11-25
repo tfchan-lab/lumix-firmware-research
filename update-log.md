@@ -2634,6 +2634,49 @@ No new flash is needed for the re-dump.
 
 ---
 
+## 2026-11-25 - Absolute LIT1 row-state gate (B8)
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** `slider-package-20261125T101606Z`, package SHA-256
+`16f12181f04dd55202b415996e1ba3cef7d316fb3a3d330396259d8255d03d55`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; card mounted
+
+The B7 dump showed the live row 1 state is 1 on the LUT page, but the draw
+hook recorded 0 and took the stock path. The owner-pointer read at draw time
+is unreliable, so B8 reads the live LIT1 row-state byte directly:
+
+- gate: `movbu (0xb30002ca)`; only state 1 takes the LUT tick path;
+- any other state takes the original `0x702250fb` map with no LUT call;
+- traces:
+  - `b3001790` row 1 state seen by the hook;
+  - `b3001791` path (0 stock / 1 LUT);
+  - `b3001794` owner pointer seen by the hook;
+  - `b3001798` draw-hook hit count.
+
+The pool LIT1 object has stayed at `0xb3000220` (row 1 state at
+`0xb30002ca`) in every live dump, and the record already uses the fixed
+`0xb3001740` address.
+
+### Package
+
+- `work/opacity-native/slider-package-20261125T101606Z/GM1__V11.bin`
+- package `16f12181...03d55`;
+- program `dda8ec51...c58dae`;
+- B7 `05305767...04c80` backed up on the PC.
+
+### Test
+
+1. Stock slider: must still work; gate sees state 4 -> stock path.
+2. LUT page: set +4; the bar should now move. If not, dump:
+   - `b3001790` should be 1;
+   - `b3001791` should be 1;
+   - `b3001794` shows whether the owner pointer was zero at draw;
+   - `b3001798` shows that the draw hook ran.
+3. If the bar moves, the complete stock + LUT bar + blend + decoupled
+   contrast combination is achieved; the number and label remain optional.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
