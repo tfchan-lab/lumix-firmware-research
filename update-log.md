@@ -2848,6 +2848,62 @@ not a row-descriptor edit.
 
 ---
 
+## 2026-11-25 - B9 complete; row label is a glyph/texture ID
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** B9 `85792aba...4bfd3` (flashed)
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; Portra +0
+
+### B9 result
+
+- stock profile switching and sliders: working;
+- LUT blending, bar and number: working;
+- native Contrast decoupled;
+- matrix updated with B7/B8 (and B9 is the current functional build).
+
+### Label path found
+
+The adjustment-row label is a **texture/glyph ID**, not a UTF-16 string:
+
+- label lookup: `0x402f9171` reads a pair table at `0x404604a6`
+  (`id -> value`); row 0 gives text ID `0x1040`;
+- text-ID resolver `0x402ba911` indexes a pointer table at
+  `0x41340000 + textID*4` (guires offset `0xA40000`);
+- text ID `0x1040` -> pointer `0x4121c6b4` (guires offset `0x91c6b4`);
+- that record is a **font/texture record** with a glyph bitmap, not a
+  UTF-16 string. Text ID `0x0c64` resolves to another texture record at
+  `0x40d2620c`.
+
+The live label indices `0x70225102=2`, `0x70225103=0` and the value-text
+table at `0x404604b2` are the value/label lookup, but the row label itself
+is a pre-rendered glyph.
+
+### Consequence
+
+“Blend Opacity” cannot be added by editing a string pointer. It needs:
+
+1. a new text ID entry at `0x41340000 + newID*4`;
+2. a new texture/glyph record in the camera font format (metrics + bitmap),
+   either generated in a spare guires area or drawn as a custom overlay;
+3. a LUT-only override of the row-0 lookup, gated by
+   `0xb30002ca == 1`, so stock still uses text ID `0x1040` (“Contrast”).
+
+No English `Opacity` or `Blend` string exists in guires to reuse; the
+`Blend` hits are German aperture text.
+
+### Options
+
+- decode the texture record and text-layout functions, then inject a new
+  “Blend Opacity” glyph/texture with a new text ID (most faithful, but a
+  separate graphics/resource task);
+- reuse an existing label (none matches);
+- custom overlay drawn by the module (UI risk);
+- keep B9 and accept the “Contrast” label.
+
+B9 remains the stable functional candidate regardless.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
