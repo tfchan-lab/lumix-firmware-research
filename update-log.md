@@ -3019,7 +3019,7 @@ the only remaining item is the row label.
 | B9 | none | - | `Contrast` |
 | B10 `d5f05e81` | blank at label lookup calls `0x402c8c05`/`0x402c8c25` | `0x1040` | `Contrast` unchanged |
 | B11 `d1c9db78` | same hooks, blank both candidates + lookup ring | `0x1040`, `0x0c67` | `Contrast` unchanged |
-| B12 `e8042d3e` | row-label ID at `0x40324654`: `0x0def` -> `0x0c64` on LUT row 0 | `0x0def` | pending camera test |
+| B12 `e8042d3e` | row-label ID at `0x40324654`: `0x0def` -> `0x0c64` on LUT row 0 | `0x0def` | `Contrast` unchanged; number stuck at 4; reverted to B9 |
 
 The B10/B11 hooks did not remove the label. **Resolved in the B12 entry
 below:** those calls use table `0x404604a6`, which only has IDs `8` and `15`;
@@ -3103,6 +3103,50 @@ Trace:
    shows whether the hook ran and which label ID was used.
 4. If the number shifts left after blanking, that is expected because the
    label width is now the blank/space width; it can be fine-tuned later.
+
+---
+
+## 2026-11-25 - B12 failed; B9 restored
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** B12 `e8042d3e...0dab7`; card restored to B9
+`85792aba...4bfd3`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`
+
+### B12 result
+
+| Check | Result |
+|---|---|
+| LUT row-0 label | still `Contrast` |
+| LUT slider number | stuck at 4 |
+| LUT blending | working |
+| LUT bar | working |
+| Stock labels/sliders | not the issue; B12 removed |
+
+The `0x40324654` hook did not remove the visible label. Substituting the
+table value there (`0x0def` -> `0x0c64`) changed the **number layout** and
+left the label in place. So that ID is part of the row value/icon draw, not
+the visible `Contrast` text.
+
+### Restore
+
+- B12 backed up as `work/card-backup/GM1__V11-B12-failed.bin`;
+- card image restored to B9 `85792aba1fbd283427dd89d1ba8b13d7f968f1de279f840bdbfc0f203f24bfd3`;
+- B9 is the functional build again: stock switching/sliders, LUT blend,
+  bar and number.
+
+### Label conclusion
+
+Three text-map attempts failed:
+
+1. B10/B11 hooked table `0x404604a6`, which only has IDs 8/15; the live
+   selectors 2/0 return `0xffff`.
+2. B12 changed the row value/icon ID; the visible `Contrast` label is
+   drawn outside that path.
+
+The label is either part of a static page/background resource or drawn by a
+different UI layer. Removing it would need a background/texture patch or a
+custom overlay, both higher risk than the current B9 build.
 
 ---
 
