@@ -2211,6 +2211,59 @@ reconnect so the live row descriptor and text ID can be mapped.
 
 ---
 
+## 2026-11-25 - Bar-only draw hook restored
+
+**Phase:** Phase 4 - cached image path
+**Build/package:** `slider-package-20261125T073525Z`, package SHA-256
+`ab0b07763acf1c0789cdeb67aeefe8628a7fec13424cb062994a194375230fa1`
+**Camera state:** DMC-GM1, official 1.1, internal `0110`; card mounted,
+camera not connected
+
+### Change
+
+B5 restored stock switching by removing both draw hooks, but the bar stopped
+moving. B6 restores **only** the value draw hook at `0x403244b1`:
+
+- page-scoped style byte `0x702250fa`, matching the old stock-safe
+  trampoline;
+- stock path keeps the original `0x702250fb` value map;
+- the text-map hook at `0x40324731` remains off, so the number may stay
+  native;
+- the bar and the opacity blend are preserved.
+
+### Package
+
+- `work/opacity-native/slider-package-20261125T073525Z/GM1__V11.bin`
+- package `ab0b0776...30fa1`;
+- program `0c215a1f...e2256d`;
+- stock restore `cad4ea27...c007`;
+- B5 stock-safe build `b098ebd7...cac5a` backed up on the PC.
+
+### Label mapping
+
+The English parameter-name pointer table is at guires `0x112a80`:
+
+- `0x112abc` -> `0x40b575f8` -> `"Contrast"`;
+- adjacent entries are `"Sharpness"`, `"Saturation"`, `"Noise Reduction"`.
+
+The row descriptor format from the state helper is eight bytes:
+
+- `u16 id`, `u8 state`, `u8 flags`, `u32 label`.
+
+The live row list is at owner `0x708f47a4` + 160 = `0x708f4844`. The camera
+was not connected for the descriptor read, so the label field is not yet
+identified. The parser is ready in `work/analyze_row_labels.py`.
+
+### Test
+
+1. Stock profiles first: switching and sliders.
+2. LUT cell: bar `-5..+5`, blend at `+5/0/-5`; number optional.
+3. If stock breaks with only the value hook, revert to B5 and use another
+   bar source.
+4. Reconnect with a LUT adjustment page open to dump the row label field.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
