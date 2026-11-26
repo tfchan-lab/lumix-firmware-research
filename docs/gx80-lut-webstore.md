@@ -291,10 +291,10 @@ a `.CUB` there and trigger the existing importer without an armcode patch.
 If it only restores settings, a true upload needs the `armcode` + main
 changes above.
 
-### 5c. Photo sharing / DLNA upload alternative
+### 5c. Photo sharing / DLNA upload alternative (tested: not available)
 
-This is the most promising lower-risk route and should be tested before any
-`armcode` patch.
+This was the most promising lower-risk route. It was tested live on a GM1 and
+**does not work**: the DLNA server is read-only.
 
 The GM1 `armcode` contains both DLNA device descriptions and the ContentDirectory
 **upload extension**:
@@ -343,6 +343,25 @@ Decisive test:
 
 This test writes at most one file and does not modify firmware. It is the
 right next experiment before committing to an `armcode` change.
+
+**Live result, 2026-11-26 (GM1, firmware D2.50, 192.168.1.133, play mode):**
+
+| Request | Result |
+|---|---|
+| `Browse` root | works; returns camera items |
+| `CreateObject` | `UPnPError 401 Invalid Action` (or 501 Action Failed) |
+| `ImportResource` | `UPnPError 401/501` |
+| `X_GetDLNAUploadProfiles` | `UPnPError 401 Invalid Action` |
+| `getinfo&type=camsetting` | `err_param` |
+
+The DLNA SCPD in `armcode` advertises upload actions, but the running GM1
+DLNA server rejects them. The GM1 content directory is effectively
+**read-only**. The settings-export/import endpoint is also unavailable on this
+body (`camsetting` returns `err_param`).
+
+Conclusion: the photo-sharing protocol cannot import a LUT on the GM1
+without patching the DLNA server, which is itself `armcode` work. It does not
+avoid the high-risk firmware project.
 
 ---
 

@@ -3330,6 +3330,37 @@ This writes at most one file and does not modify firmware.
 
 Research: `docs/gx80-lut-webstore.md` section 5c.
 
+---
+
+## 2026-11-26 - GM1 DLNA upload tested: read-only
+
+**Phase:** LUT store research
+**Build/package:** no firmware change; B9 remains the GM1 release
+**Camera state:** DMC-GM1, firmware D2.50, play mode, 192.168.1.133
+
+Tested the photo-sharing/DLNA route live, since the GM1 `armcode` advertises
+`CreateObject`, `ImportResource` and `X_GetDLNAUploadProfiles`.
+
+Results:
+
+- `Browse` on `http://192.168.1.133:60606/Server0/CDS_control` works and
+  returns the camera items;
+- `CreateObject` returns UPnP `401 Invalid Action` (or `501 Action Failed`);
+- `ImportResource` returns `401/501`;
+- `X_GetDLNAUploadProfiles` returns `401 Invalid Action`;
+- `getinfo&type=camsetting` returns `err_param` on GM1.
+
+So the GM1 DLNA ContentDirectory is effectively read-only, and the
+settings-export/import endpoint is not available on this body. The advertised
+upload actions in `armcode` are not implemented by the running DLNA server.
+
+Conclusion: the photo-sharing protocol cannot import a LUT on the GM1
+without patching the DLNA server, which is itself `armcode` work. The only
+remaining true Wi-Fi route is a custom `armcode` endpoint plus a
+main-firmware memory receiver.
+
+Research: `docs/gx80-lut-webstore.md` section 5c.
+
 
 ---
 
