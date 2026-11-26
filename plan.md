@@ -602,12 +602,19 @@ Node.js store (HTTPS)
 
 ### Make-or-break research
 
-- Decode all six GM1 components.
-- Search for `cam.cgi`, `accctrl`, `getinfo`, `camcmd`, `setsetting`, `HTTP/1.`, `Content-Length`, `SOAPAction`, `MediaServer`.
-- Determine the owner:
-  - `program`/`program2`: plausible;
-  - `armcode`: significant extension and risk;
-  - Wi-Fi module: no firmware endpoint; stay on the SD bridge.
+- Decoded all six GM1 components on 2026-11-26.
+- `cam.cgi` is in **`armcode`**, the Wi-Fi/HTTP firmware. It is absent from
+  `program`, `program2` and `guires`.
+- Observed `cam.cgi` modes: `getsetting`, `setsetting`, `startstream`,
+  `stopstream`, `getstate`, `camcmd`, `getinfo`, `camctrl`, `getcamicon`,
+  `startsenddata`, `get_content_info`, `set_thumb_prefetch_info`, `notify`,
+  `getprogress`, `playcmd`, `senddata`.
+- There is no LUT or generic file-upload mode. `startsenddata` +
+  `senddata` is the Image App settings-import path (`type=camsetting`), not a
+  LUT import API.
+- Direct Wi-Fi LUT upload therefore needs an `armcode` endpoint plus a
+  main-firmware receiver/import path. `armcode` is significant extension and
+  risk; do not patch it without a recovery plan.
 
 ### Firmware endpoint
 
@@ -710,8 +717,8 @@ Do not edit the released 0.2.8 app in place. Use a new local build or a fork-spe
 
 ## 16. Open questions
 
-1. Does the GM1 support the same `cam.cgi` API and “Via Network” client mode as GM5?
-2. Where is `cam.cgi` implemented in the GM1 image?
+1. Does the GM1 support the same `cam.cgi` API and “Via Network” client mode as GM5? **Yes for `cam.cgi`; the mode table is in `armcode`.**
+2. Where is `cam.cgi` implemented in the GM1 image? **`armcode` (Wi-Fi/HTTP firmware), confirmed 2026-11-26.**
 3. Does GM1 apply native parameter bytes after the LUT table?
 4. Is the opacity byte still present in the old saved-bank format, or do we need a new bank version?
 5. Can a 512 KiB upload buffer coexist with preview/recording memory?

@@ -3225,6 +3225,43 @@ and provide the camera helper as a reversible free tool.
 
 ---
 
+## 2026-11-26 - GM1 cam.cgi owner found in armcode; no LUT upload mode
+
+**Phase:** LUT store research
+**Build/package:** no firmware change; B9 remains the GM1 release
+**Camera state:** GM1 offline component analysis only
+
+Decoded all six official GM1 1.1 components with the pinned five-round AES
+decoder. The `cam.cgi` server is in **`armcode`**, the Wi-Fi/HTTP firmware; it
+is absent from `program`, `program2` and `guires`.
+
+The armcode mode table contains:
+
+`getsetting`, `setsetting`, `startstream`, `stopstream`, `getstate`,
+`camcmd`, `getinfo`, `camctrl`, `getcamicon`, `startsenddata`,
+`get_content_info`, `set_thumb_prefetch_info`, `notify`, `getprogress`,
+`playcmd`, `senddata`.
+
+There is no LUT or generic file-upload mode. `startsenddata` + `senddata` is
+the Image App settings-import path (`type=camsetting`); it is not a `.CUB`
+import API. The LUT importer remains in the main program and reads from SD.
+
+A pure Wi-Fi LUT import therefore requires:
+
+1. an `armcode` endpoint/type branch that accepts LUT bytes and forwards them
+   to the main program;
+2. a main-program receiver that feeds the existing LUT parser/converter and
+   bank writer from memory.
+
+This is a firmware-endpoint project, not a webstore-only change. `armcode` is
+the Wi-Fi/HTTP firmware and is a high-risk patch target. The SD import path
+(B9) remains the safe store workflow until a recovery-tested armcode change
+exists.
+
+Research: `docs/gx80-lut-webstore.md` (GM1 section 5a); plan phase 7 updated.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.

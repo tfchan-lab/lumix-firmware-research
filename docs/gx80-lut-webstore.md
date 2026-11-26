@@ -21,7 +21,8 @@ The realistic product is:
    Wi-Fi;
 3. a clear workflow: configure the camera, shoot, then apply the purchased
    LUT in post;
-4. for GM1 (patched LUT import), keep the existing SD import flow.
+4. for GM1 (patched LUT import), the stock `cam.cgi` API has no LUT upload
+   path; direct Wi-Fi import needs an `armcode` firmware endpoint (see 5a).
 
 A public HTTPS store page cannot safely call `http://192.168.54.1/cam.cgi`
 directly. The camera has no CORS headers, and an HTTPS page cannot mix in
@@ -179,6 +180,59 @@ browser mixed-content problem.
 The store should not blur these tracks. A GX80 user buying a “LUT” expects a
 file, not a hidden camera profile; a GM1 user expects an importable file.
 
+### 5a. GM1: where the CGI API lives, and what it can import
+
+All six official GM1 1.1 components were decoded offline on 2026-11-26:
+
+| Component | `cam.cgi` strings | Role |
+|---|---|---|
+| `program` | none | main camera program; LUT importer/apply path |
+| `guires` | none | UI resources |
+| `program2` | none | secondary main program |
+| `armcode` | **yes** | Wi-Fi/HTTP firmware; `cam.cgi`, DLNA, WPA supplicant |
+| `other` | none | remaining firmware data |
+| `eep` | none | EEPROM image |
+
+The `armcode` mode table contains:
+
+```text
+getsetting setsetting startstream stopstream getstate camcmd
+getinfo camctrl getcamicon startsenddata get_content_info
+set_thumb_prefetch_info notify getprogress playcmd senddata
+```
+
+There is **no** `lut`, `file`, `upload`, `import` or generic POST-file mode.
+The only known inbound data path is the Image App settings copy:
+
+```text
+GET  /cam.cgi?mode=startsenddata&type=camsetting&value=<length>
+POST /cam.cgi?mode=senddata
+```
+
+That payload is a camera settings blob, not a `.CUB` LUT, and the LUT patch’s
+importer is in the main program and reads from SD. A pure Wi-Fi LUT upload
+therefore needs two firmware changes:
+
+1. an `armcode` endpoint or a new `type=lut` branch that accepts the LUT
+   bytes and forwards them to the main program;
+2. a main-program receiver that feeds the existing LUT parser/converter and
+   bank writer from memory instead of an SD file.
+
+This is a firmware-endpoint project, not a webstore-only project. `armcode`
+is the Wi-Fi/HTTP firmware; a bad patch can break Wi-Fi or the camera. Do not
+start there without a recovery path and a test body.
+
+**Lower-risk alternatives:**
+
+- **SD import (current B9):** the store downloads a validated `.CUB`; the user
+  copies it to the card and the camera imports it. No firmware change.
+- **Local bridge + card reader:** the store/bridge writes the LUT to the SD
+  card on the PC, then the user imports on the camera. Still no Wi-Fi upload.
+- **Settings-import research:** use the existing `startsenddata` path on a
+  GM1 to capture the transport and see whether the main firmware writes a
+  file or only settings. This is read-only/benign if the payload is a normal
+  settings blob, and it tells us whether the path can be extended safely.
+
 ---
 
 ## 6. MVP scope
@@ -259,6 +313,12 @@ file, not a hidden camera profile; a GM1 user expects an importable file.
 8. Should the store ever sell a “Cinelike V unlock,” or only LUTs and recipes?
    Recommendation: **do not sell the unlock**; provide it as a free,
    reversible helper and sell the LUT/recipe content.
+9. Can the GM1 settings-import path (`startsenddata`/`senddata`) carry a
+   LUT or write a file to SD, or does it only restore settings?
+10. Is `armcode` recoverable through the official updater/service path if a
+    custom Wi-Fi endpoint fails?
+11. Can a custom `armcode` component be packaged without breaking the
+    update policy/signature path used by the LUT installer?
 
 ---
 
@@ -276,4 +336,7 @@ file, not a hidden camera profile; a GM1 user expects an importable file.
   <https://github.com/auberginehill/panasonic-html-image-app>
 - `cleverfox/lumixproto`, GX80 Wi-Fi protocol notes:
   <https://github.com/cleverfox/lumixproto>
+- GM1 program decoding and six-component inventory:
+  [gm1-program-analysis.md](gm1-program-analysis.md)
+- GM1 LUT import and SD workflow: [gm1-luts.md](gm1-luts.md)
 - Existing store plan: [plan.md](../plan.md) phases 6–8.
