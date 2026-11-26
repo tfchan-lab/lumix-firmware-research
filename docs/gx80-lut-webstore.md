@@ -291,6 +291,59 @@ a `.CUB` there and trigger the existing importer without an armcode patch.
 If it only restores settings, a true upload needs the `armcode` + main
 changes above.
 
+### 5c. Photo sharing / DLNA upload alternative
+
+This is the most promising lower-risk route and should be tested before any
+`armcode` patch.
+
+The GM1 `armcode` contains both DLNA device descriptions and the ContentDirectory
+**upload extension**:
+
+```text
+MediaServer / MediaRenderer
+ContentDirectory actions:
+  GetSearchCapabilities, GetSortCapabilities, GetSystemUpdateID,
+  Browse, Search, CreateObject, DestroyObject, UpdateObject,
+  ImportResource, ExportResource, StopTransferResource,
+  GetTransferProgress, DeleteResource, CreateReference,
+  GetFeatureList, GetServiceResetToken
+X_GetDLNAUploadProfiles
+```
+
+`CreateObject` and `ImportResource` are the standard UPnP ContentDirectory
+upload actions. If the GM1 implements them, a control point can ask the
+camera to fetch a file from a local HTTP server and store it on the card.
+That would avoid `cam.cgi` POST and avoid an `armcode` patch.
+
+Caveats:
+
+- The GM1 manual documents only **camera → phone/TV/PC/web** sharing. It does
+  not document phone → camera import. The actions may be generic or stubbed.
+- The upload profiles may only accept image/video MIME types, not
+  `application/octet-stream` or `.CUB`.
+- The file likely lands in the camera’s content directory (`DCIM/...`), not
+  the SD root. The B9 LUT importer scans the root for `.CUB`; if the upload
+  succeeds but lands in `DCIM`, a **main-firmware** scan-path change would be
+  needed (lower risk than an `armcode` patch).
+- The filename may be auto-generated rather than preserved.
+- The camera may need to be in playback mode, and the ContentDirectory may
+  expose upload only while its server is active.
+
+Decisive test:
+
+1. Connect the GM1 Wi-Fi and query the ContentDirectory SCPD and
+   `X_GetDLNAUploadProfiles`.
+2. Host a small `TEST.CUB` on the laptop/phone at a reachable HTTP URL.
+3. Send `ImportResource` (or `CreateObject` with a DIDL-Lite `res` URL) to
+   the camera’s `CDS_control`.
+4. Observe the SOAP result and `GetTransferProgress`.
+5. Inspect the SD card: did a file appear, where, with what name/extension?
+6. If it appears under `DCIM`, test whether the LUT importer can be pointed
+   there or whether a small scan-path patch is sufficient.
+
+This test writes at most one file and does not modify firmware. It is the
+right next experiment before committing to an `armcode` change.
+
 ---
 
 ## 6. MVP scope

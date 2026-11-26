@@ -3298,6 +3298,38 @@ path, to learn the `type` handling and whether the body is written to a file,
 kept in RAM, or forwarded to main.
 
 Research: `docs/gx80-lut-webstore.md` section 5b.
+---
+
+## 2026-11-26 - DLNA upload path found in GM1 armcode
+
+**Phase:** LUT store research
+**Build/package:** no firmware change; B9 remains the GM1 release
+**Camera state:** offline analysis only
+
+The GM1 `armcode` advertises the DLNA ContentDirectory upload extension:
+
+- MediaServer and MediaRenderer device descriptions;
+- `X_GetDLNAUploadProfiles`;
+- `CreateObject`, `ImportResource`, `ExportResource`,
+  `StopTransferResource`, `GetTransferProgress`, `DeleteResource`,
+  `CreateReference`.
+
+This is potentially a **lower-risk LUT transport** than patching `cam.cgi`:
+the camera fetches a file from a local HTTP server and stores it through its
+content directory. No `armcode` endpoint is required if the actions are
+actually implemented.
+
+Caveats: the GM1 manual documents only camera-to-phone/TV/PC sharing; the
+upload actions may be generic or stubbed. The upload profiles may reject
+`.CUB`/`application/octet-stream`, and the file may land in `DCIM` rather
+than the SD root scanned by the LUT importer.
+
+Next test: query the ContentDirectory SCPD and upload profiles, host a small
+`TEST.CUB`, send `ImportResource`/`CreateObject`, and inspect the SD card.
+This writes at most one file and does not modify firmware.
+
+Research: `docs/gx80-lut-webstore.md` section 5c.
+
 
 ---
 
