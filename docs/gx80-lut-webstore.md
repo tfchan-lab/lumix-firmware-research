@@ -233,6 +233,64 @@ start there without a recovery path and a test body.
   file or only settings. This is read-only/benign if the payload is a normal
   settings blob, and it tells us whether the path can be extended safely.
 
+### 5b. Feasibility of a true Wi-Fi LUT upload
+
+**Assessment: technically feasible, but a multi-stage firmware project, not a
+webstore-only change.**
+
+Evidence in favour:
+
+- `armcode` already accepts an inbound POST body through
+  `startsenddata`/`senddata`, including a declared length and progress query.
+  The HTTP transport and buffer management exist.
+- The main LUT importer at `0x407bf000` is **memory-based**. It validates a
+  descriptor containing four section pointers/sizes (using the memory-range
+  checker at `0x407262bc`), then parses the sections. The SD path reads the
+  file into that descriptor; it is not hard-wired to a filename or file
+  handle.
+- All six GM1 components are decoded, and the main LUT parser/apply/bank
+  writer is already understood well enough to patch.
+
+Missing pieces:
+
+1. **Armcode route:** no `type=lut` and no LUT mode. We need to find the
+   `senddata` handler, its `type` validation, and how it forwards buffers to
+   the main program. The cleanest change is a new `type=lut` that reaches the
+   same buffer/IPC path.
+2. **Main receiver:** a small handler that builds the four-section descriptor
+   from the uploaded bytes, calls the importer, and commits the bank. This is
+   the lower-risk side because the importer already works from memory.
+3. **Packaging:** the current LUT installer patches `program`, `guires` and
+   `program2`; it does not patch `armcode`. Adding an `armcode` component to
+   the recipe, update container and verification path is unproven.
+4. **Recovery:** a bad `armcode` patch can break Wi-Fi or the camera. There is
+   no proven independent recovery path for that component.
+5. **Testing:** need a GM1 test body and repeated update/restore cycles.
+
+Risk/effort profile:
+
+| Workstream | Difficulty | Risk |
+|---|---|---|
+| Webstore + local bridge + upload client | medium | low |
+| Main-firmware memory receiver/importer call | medium | medium |
+| `armcode` `type=lut`/POST route | high (ARM Thumb-2) | high |
+| `armcode` packaging/flashing | high | very high |
+| Recovery/test cycle | high | very high |
+
+The first safe experiment is **not** a LUT upload. It is a benign GM1
+settings-import probe using the existing `startsenddata`/`senddata` path with
+a known settings blob, to learn:
+
+- what `type` values the handler accepts;
+- whether the body is written to a file, kept in RAM, or forwarded to the
+  main program;
+- what the progress/commit semantics are.
+
+If that path already writes a file to SD, a webstore could potentially place
+a `.CUB` there and trigger the existing importer without an armcode patch.
+If it only restores settings, a true upload needs the `armcode` + main
+changes above.
+
 ---
 
 ## 6. MVP scope

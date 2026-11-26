@@ -3262,6 +3262,45 @@ Research: `docs/gx80-lut-webstore.md` (GM1 section 5a); plan phase 7 updated.
 
 ---
 
+## 2026-11-26 - True Wi-Fi LUT upload feasibility
+
+**Phase:** LUT store research
+**Build/package:** no firmware change; B9 remains the GM1 release
+**Camera state:** offline analysis only
+
+Assessed a true Wi-Fi LUT upload for GM1 rather than the SD-first workflow.
+
+Positive evidence:
+
+- `armcode` already accepts an inbound POST body through
+  `startsenddata`/`senddata`, with a declared length and progress query.
+- the main LUT importer at `0x407bf000` is memory-based: it validates a
+  four-section descriptor of pointers/sizes and parses it. The SD path fills
+  that descriptor from a file, so a RAM buffer can feed the same importer.
+- all six GM1 components are decoded and the main LUT parser/bank writer is
+  understood.
+
+Missing pieces:
+
+1. an `armcode` `type=lut`/route that carries the LUT bytes to the main
+   program;
+2. a main-firmware receiver that builds the importer descriptor and commits
+   the bank;
+3. update packaging for `armcode` (current installer patches only
+   program/guires/program2);
+4. a recovery path for a bad `armcode` change;
+5. a test body and repeated update cycles.
+
+Assessment: technically feasible, but a multi-stage firmware project with
+high risk in `armcode` and packaging. The first safe experiment is a benign
+settings-import probe on GM1 using the existing `startsenddata`/`senddata`
+path, to learn the `type` handling and whether the body is written to a file,
+kept in RAM, or forwarded to main.
+
+Research: `docs/gx80-lut-webstore.md` section 5b.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
