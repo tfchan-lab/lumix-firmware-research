@@ -185,6 +185,7 @@ Start with:
 - [Plan and roadmap](plan.md) for what we are doing next;
 - [Update log](update-log.md) for what has actually been tested;
 - [GM1 LUT guide](docs/gm1-luts.md) for the current firmware behavior;
+- [GX80/GX85 Cinelike + LUT store research](docs/gx80-lut-webstore.md);
 - [Updater app guide](apps/README.md) for preparing an SD update;
 - [Reproducibility notes](docs/reproducibility.md) for evidence boundaries.
 

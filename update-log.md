@@ -3196,6 +3196,35 @@ of Git for now; the copies can be put on the SD card when the card is mounted.
 
 ---
 
+## 2026-11-26 - GX80/GX85 Cinelike hack and LUT store research
+
+**Phase:** LUT store research
+**Build/package:** no firmware change; B9 remains the GM1 release
+**Camera state:** GX80/GX85 protocol research only
+
+Started the LUT webstore research around the public GX80/GX85 Cinelike hack.
+The hack is an undocumented `cam.cgi` HTTP sequence, not a firmware patch:
+
+- `accctrl&type=req_acc` handshake;
+- `camcmd&value=recmode` remote-control session;
+- `setsetting&type=colormode&value=cinelike_d` (or `cinelike_v`);
+- `setsetting&type=colormode&value=standard` to restore.
+
+Key constraint: the GX80/GX85 hack enables hidden Photo Styles; it does not
+add in-camera LUT import. A public HTTPS store also cannot read the camera's
+plain-HTTP `cam.cgi` responses because of mixed content and CORS. The working
+architecture is therefore a localhost bridge that serves the store UI, talks
+to the camera, and keeps the public store as a catalog/download service.
+
+Research note: `docs/gx80-lut-webstore.md`.
+
+Recommended first experiment: verify the handshake client-ID rule, whether
+the `:60606` UPnP helper is needed, and whether `cinelike_v` works on the
+GX80/GX85. Do not sell the hidden-profile unlock itself; sell LUTs/recipes
+and provide the camera helper as a reversible free tool.
+
+---
+
 ## Firmware and package registry
 
 Track every prepared build that reaches the camera. Never reuse a hash for a different build.
